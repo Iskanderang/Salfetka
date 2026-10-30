@@ -1,0 +1,23 @@
+{
+  "name": "@napkin/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@napkin/shared": "*",
+    "fastify": "^5.0.0",
+    "lucide-react": "^0.460.0",
+    "lucide-static": "^0.460.0",
+    "openai": "^4.70.0",
+    "zod": "^3.23.0",
+    "zod-to-json-schema": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0"
+  }
+}
