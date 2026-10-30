@@ -35,12 +35,15 @@ type ItemEditorProps = {
   autoColor: string;
   colorLocked: boolean;
   onChange: (patch: Partial<Item>) => void;
-  onMove: (dir: -1 | 1) => void;
+  /** Переставить пункт на позицию (с 0) */
+  onMoveTo: (to: number) => void;
+  /** Вставить новый пункт на позицию (с 0) */
+  onInsert: (at: number) => void;
   onDelete: () => void;
   onClose: () => void;
 };
 
-export function ItemEditor({ item, index, count, palette, autoColor, colorLocked, onChange, onMove, onDelete, onClose }: ItemEditorProps) {
+export function ItemEditor({ item, index, count, palette, autoColor, colorLocked, onChange, onMoveTo, onInsert, onDelete, onClose }: ItemEditorProps) {
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<string[] | null>(null);
   const [translated, setTranslated] = useState("");
@@ -81,10 +84,10 @@ export function ItemEditor({ item, index, count, palette, autoColor, colorLocked
       <div className="pop-head">
         <b>Пункт {index + 1}</b>
         <div className="pop-head-actions">
-          <button className="icon-btn" title="Левее / выше" disabled={index === 0} onClick={() => onMove(-1)}>
+          <button className="icon-btn" title="Левее / выше" disabled={index === 0} onClick={() => onMoveTo(index - 1)}>
             ←
           </button>
-          <button className="icon-btn" title="Правее / ниже" disabled={index === count - 1} onClick={() => onMove(1)}>
+          <button className="icon-btn" title="Правее / ниже" disabled={index === count - 1} onClick={() => onMoveTo(index + 1)}>
             →
           </button>
           <button className="icon-btn danger" title="Удалить пункт" disabled={count <= 2} onClick={onDelete}>
@@ -94,6 +97,28 @@ export function ItemEditor({ item, index, count, palette, autoColor, colorLocked
             ✕
           </button>
         </div>
+      </div>
+
+      <div className="order-row">
+        <label>
+          Место
+          <select value={index} onChange={(e) => onMoveTo(Number(e.target.value))}>
+            {Array.from({ length: count }, (_, i) => (
+              <option key={i} value={i}>
+                {i + 1} из {count}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="order-add">
+          Новый пункт:
+          <button className="icon-btn" disabled={count >= 8} onClick={() => onInsert(index)} title="Вставить новый пункт перед этим">
+            + перед
+          </button>
+          <button className="icon-btn" disabled={count >= 8} onClick={() => onInsert(index + 1)} title="Вставить новый пункт после этого">
+            + после
+          </button>
+        </span>
       </div>
 
       <div className="pop-grid">

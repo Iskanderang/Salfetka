@@ -65,6 +65,7 @@ export function App() {
   const [status, setStatus] = useState<HealthResponse | null>(null);
   const [pop, setPop] = useState<Pop>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [help, setHelp] = useState<HelpTab | null>(null);
   const [ai, setAi] = useLocal<AiSettings>("nf.ai", { provider: "local", keys: {}, models: {} }, (a) => ({
@@ -101,7 +102,6 @@ export function App() {
     };
   }, [ai]);
 
-  const providerName = providerList.find((p) => p.id === ai.provider)?.name ?? (ai.provider === "local" ? "Своя видеокарта" : "OpenRouter");
 
   useEffect(() => {
     const onSel = () => {
@@ -165,21 +165,43 @@ export function App() {
     }
   }
 
-  function moveItem(i: number, dir: -1 | 1) {
-    updateVisual((v) => {
-      const items = [...v.items];
-      const j = i + dir;
-      [items[i], items[j]] = [items[j], items[i]];
-      return { ...v, items };
-    });
-    setPop((p) => (p && p.kind === "item" ? { ...p, index: i + dir } : p));
+  /** Окно правки у пункта на схеме (после перерисовки, когда пункт уже на новом месте). */
+  function openItemPop(index: number) {
+    // таймер, а не requestAnimationFrame: тот не срабатывает в фоновой вкладке
+    setTimeout(() => {
+      const box = previewRef.current?.getBoundingClientRect();
+      const el = previewRef.current?.querySelector(`.svg-main [data-item="${index}"]`)?.getBoundingClientRect();
+      if (!box) return;
+      const width = 360;
+      const cx = el ? el.left + el.width / 2 - box.left : box.width / 2;
+      const y = el ? el.top - box.top + Math.min(el.height, 120) : 40;
+      setPop({ kind: "item", index, x: Math.max(8, Math.min(cx - width / 2, box.width - width - 8)), y });
+    }, 30);
   }
 
-  function addItem() {
+  /** Переставить пункт сразу на нужное место (остальные сдвигаются). */
+  function moveItem(from: number, to: number) {
+    if (!current || to < 0 || to >= current.visual.items.length || to === from) return;
+    updateVisual((v) => {
+      const items = [...v.items];
+      const [it] = items.splice(from, 1);
+      items.splice(to, 0, it);
+      return { ...v, items };
+    });
+    setPop((p) => (p && p.kind === "item" ? { ...p, index: to } : p));
+  }
+
+  /** Новый пункт на позицию at (0 — в начало) и сразу окно правки для него. */
+  function insertItem(at: number) {
+    setAddOpen(false);
     if (!current || current.visual.items.length >= 8) return;
-    updateVisual((v) => ({ ...v, items: [...v.items, { label: "Новый пункт", text: "", icon: "sparkles", iconOptions: ["sparkles"], value: "", children: [] }] }));
-    const box = previewRef.current?.getBoundingClientRect();
-    setPop({ kind: "item", index: current.visual.items.length, x: box ? box.width / 2 - 180 : 20, y: 40 });
+    const fresh: Item = { label: "Новый пункт", text: "", icon: "sparkles", iconOptions: ["sparkles"], value: "", children: [] };
+    updateVisual((v) => {
+      const items = [...v.items];
+      items.splice(at, 0, fresh);
+      return { ...v, items };
+    });
+    openItemPop(at);
   }
 
   /** Клик по схеме: пункт → редактор пункта, заголовок → редактор заголовка. */
@@ -233,7 +255,7 @@ export function App() {
           }}
           title="Где работает нейросеть"
         >
-          ⚙ {ai.provider === "local" ? "💻" : "☁️"} {providerName}
+          ⚙ {ai.provider === "local" ? "💻 Своя видеокарта" : "☁️ OpenRouter"}
         </button>
         <nav className="help-nav">
           {HELP_TABS.map((t) => (
@@ -365,9 +387,30 @@ export function App() {
                   <button onClick={() => run(true)} disabled={!!loading} title="Тот же текст — другая подача">
                     {loading === "variant" ? "…" : "🔄 Ещё вариант"}
                   </button>
-                  <button onClick={addItem} disabled={current.visual.items.length >= 8}>
-                    + Пункт
-                  </button>
+                  <div className="menu-wrap">
+                    <button
+                      onClick={() => {
+                        setPop(null);
+                        setAddOpen((o) => !o);
+                      }} disabled={current.visual.items.length >= 8} title={current.visual.items.length >= 8 ? "Максимум 8 пунктов" : "Добавить пункт в нужное место"}>
+                      + Пункт ▾
+                    </button>
+                    {addOpen && (
+                      <div className="menu add-menu" onMouseLeave={() => setAddOpen(false)}>
+                        <small className="menu-head">Куда добавить пункт?</small>
+                        <button onClick={() => insertItem(0)}>
+                          <b>В начало</b>
+                        </button>
+                        {current.visual.items.map((it, i) => (
+                          <button key={i} onClick={() => insertItem(i + 1)}>
+                            <span>
+                              После <b>{i + 1}. {it.label}</b>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button onClick={() => exportAs("copy")} title="PNG в буфер обмена — вставьте Ctrl+V в чат, письмо или слайд">
                     Копировать
                   </button>
@@ -407,7 +450,8 @@ export function App() {
                       autoColor={paint.t.palette[pop.index % paint.t.palette.length]}
                       colorLocked={!!style.fixedTheme}
                       onChange={(patch) => setItem(pop.index, patch)}
-                      onMove={(dir) => moveItem(pop.index, dir)}
+                      onMoveTo={(to) => moveItem(pop.index, to)}
+                      onInsert={(at) => insertItem(at)}
                       onDelete={() => {
                         updateVisual((v) => ({ ...v, items: v.items.filter((_, j) => j !== pop.index) }));
                         setPop(null);
