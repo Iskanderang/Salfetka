@@ -4,10 +4,11 @@ import { health, visualize } from "./api";
 import { VisualSvg } from "./render/VisualSvg";
 import { THEMES } from "./render/themes";
 import { STYLES, styleById } from "./render/styles";
-import { Paint } from "./render/paint";
+import { Paint, DEFAULT_LOOK, type Look } from "./render/paint";
 import { iconExists } from "./render/primitives";
-import { copyPng, download, slug, svgToPng, svgToStory, svgToString } from "./render/export";
+import { copyPng, download, slug, svgToPng, svgToString } from "./render/export";
 import { ItemEditor, Popover, TitleEditor } from "./Editor";
+import { LookPanel } from "./LookPanel";
 
 const SAMPLE = `Как запустить свой продукт с нуля.
 
@@ -53,6 +54,7 @@ export function App() {
   const [themeId, setThemeId] = useLocal("nf.theme", THEMES[0].id);
   const [styleId, setStyleId] = useLocal("nf.style", STYLES[0].id);
   const [history, setHistory] = useLocal<Doc[]>("nf.history", [], fixHistory);
+  const [look, setLook] = useLocal<Look>("nf.look", DEFAULT_LOOK, (l) => ({ ...DEFAULT_LOOK, ...l }));
   const [current, setCurrent] = useState<Doc | null>(history[0] ?? null);
   const [sel, setSel] = useState<[number, number]>([0, 0]);
   const [loading, setLoading] = useState<"" | "new" | "variant">("");
@@ -131,6 +133,15 @@ export function App() {
   const setItem = (i: number, patch: Partial<Item>) =>
     updateVisual((v) => ({ ...v, items: v.items.map((it, j) => (j === i ? { ...it, ...patch } : it)) }));
 
+  /** Палитра перекрашивает всю схему: свои цвета пунктов сбрасываются, иначе они «прибиты» и не меняются. */
+  function applyPalette(id: string) {
+    setThemeId(id);
+    if (current?.visual.items.some((it) => it.color)) {
+      updateVisual((v) => ({ ...v, items: v.items.map(({ color: _c, ...it }) => it) }));
+      setToast("Свои цвета пунктов сброшены — вся схема в новой палитре");
+    }
+  }
+
   function moveItem(i: number, dir: -1 | 1) {
     updateVisual((v) => {
       const items = [...v.items];
@@ -163,7 +174,7 @@ export function App() {
     else setPop(null);
   }
 
-  async function exportAs(kind: "svg" | "png" | "png-clear" | "story" | "copy") {
+  async function exportAs(kind: "svg" | "png" | "png-clear" | "copy") {
     const svg = svgRef.current;
     setExportOpen(false);
     if (!svg || !current) return;
@@ -172,7 +183,6 @@ export function App() {
       if (kind === "svg") download(new Blob([await svgToString(svg)], { type: "image/svg+xml" }), `${name}.svg`);
       if (kind === "png") download(await svgToPng(svg), `${name}.png`);
       if (kind === "png-clear") download(await svgToPng(svg, 2, true), `${name}-transparent.png`);
-      if (kind === "story") download(await svgToStory(svg, new Paint(style, theme, current.visual).t.bg), `${name}-story.png`);
       if (kind === "copy") {
         await copyPng(svg);
         setToast("PNG скопирован в буфер");
@@ -184,7 +194,7 @@ export function App() {
 
   const recommended = current?.visual.layouts ?? [];
   const ordered: Layout[] = [...recommended, ...LAYOUTS.filter((l) => !recommended.includes(l))];
-  const paint = current ? new Paint(style, theme, current.visual) : null;
+  const paint = current ? new Paint(style, theme, current.visual, look) : null;
 
   return (
     <div className="app">
@@ -261,12 +271,21 @@ export function App() {
                 {STYLES.map((s) => (
                   <button key={s.id} className={`style-card ${s.id === style.id ? "active" : ""}`} onClick={() => setStyleId(s.id)} title={s.hint}>
                     <div className="style-thumb">
-                      <VisualSvg visual={current.visual} layout={current.layout} theme={theme} style={s} className="svg-thumb" />
+                      <VisualSvg visual={current.visual} layout={current.layout} theme={theme} style={s} look={look} className="svg-thumb" />
                     </div>
                     <span>{s.name}</span>
                   </button>
                 ))}
               </div>
+
+              <LookPanel
+                look={look}
+                onChange={setLook}
+                style={style}
+                autoColor={paint.base.text}
+                colorIgnored={!!look.color && !paint.textColorApplied}
+                autoBg={new Paint(style, theme, current.visual, { ...look, bg: undefined }).base.bg}
+              />
 
               <div className="toolbar">
                 <div className="themes" title={style.fixedTheme ? "У этого стиля своя палитра" : "Палитра"}>
@@ -277,7 +296,7 @@ export function App() {
                       title={t.name}
                       disabled={!!style.fixedTheme}
                       style={{ background: `linear-gradient(135deg, ${t.palette[0]} 0 50%, ${t.palette[2]} 50% 100%)`, outlineColor: t.palette[0] }}
-                      onClick={() => setThemeId(t.id)}
+                      onClick={() => applyPalette(t.id)}
                     />
                   ))}
                 </div>
@@ -289,17 +308,27 @@ export function App() {
                   <button onClick={addItem} disabled={current.visual.items.length >= 8}>
                     + Пункт
                   </button>
-                  <button onClick={() => exportAs("copy")}>Копировать</button>
+                  <button onClick={() => exportAs("copy")} title="PNG в буфер обмена — вставьте Ctrl+V в чат, письмо или слайд">
+                    Копировать
+                  </button>
                   <div className="menu-wrap">
                     <button className="primary-soft" onClick={() => setExportOpen((o) => !o)}>
                       Скачать ▾
                     </button>
                     {exportOpen && (
                       <div className="menu" onMouseLeave={() => setExportOpen(false)}>
-                        <button onClick={() => exportAs("png")}>PNG</button>
-                        <button onClick={() => exportAs("png-clear")}>PNG без фона</button>
-                        <button onClick={() => exportAs("story")}>Сторис 1080×1920</button>
-                        <button onClick={() => exportAs("svg")}>SVG (вектор)</button>
+                        <button onClick={() => exportAs("png")}>
+                          <b>PNG</b>
+                          <small>Обычная картинка в двойном разрешении. Для Word, Google Docs, соцсетей, мессенджеров и писем.</small>
+                        </button>
+                        <button onClick={() => exportAs("png-clear")}>
+                          <b>PNG без фона</b>
+                          <small>Прозрачный фон: схема ложится на любой цветной слайд. Для PowerPoint, Keynote, Canva, видеомонтажа.</small>
+                        </button>
+                        <button onClick={() => exportAs("svg")}>
+                          <b>SVG (вектор)</b>
+                          <small>Не теряет чёткость при любом увеличении, можно править. Для Figma, Illustrator, сайтов, печати; PowerPoint 365 тоже понимает.</small>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -307,7 +336,7 @@ export function App() {
               </div>
 
               <div className="preview" ref={previewRef} onClick={onPreviewClick}>
-                <VisualSvg ref={svgRef} visual={current.visual} layout={current.layout} theme={theme} style={style} className="svg-main" />
+                <VisualSvg ref={svgRef} visual={current.visual} layout={current.layout} theme={theme} style={style} look={look} className="svg-main" />
                 {pop?.kind === "item" && current.visual.items[pop.index] && (
                   <Popover x={pop.x} y={pop.y} onClose={() => setPop(null)}>
                     <ItemEditor
@@ -346,7 +375,7 @@ export function App() {
                     }}
                   >
                     <div className="thumb">
-                      <VisualSvg visual={current.visual} layout={l} theme={theme} style={style} className="svg-thumb" />
+                      <VisualSvg visual={current.visual} layout={l} theme={theme} style={style} look={look} className="svg-thumb" />
                     </div>
                     <span>
                       {recommended.includes(l) && <b className="star">★ </b>}

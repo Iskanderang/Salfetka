@@ -1,18 +1,20 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "@fontsource/caveat/400.css";
-import "@fontsource/caveat/700.css";
 import { App } from "./App";
 import { clearTextCache } from "./render/text";
+import { fontById, loadFont } from "./render/fonts";
 import "./styles.css";
 
 // Ширину текста меряем по настоящему шрифту, поэтому ждём рукописный шрифт до первого рендера.
 async function boot() {
+  // рукописный шрифт стилей «Салфетка»/«Доска» и шрифт, выбранный пользователем в прошлый раз
+  let saved: string | undefined;
   try {
-    await Promise.all([document.fonts.load('400 20px "Caveat"', "Абв Abc"), document.fonts.load('700 20px "Caveat"', "Абв Abc")]);
+    saved = JSON.parse(localStorage.getItem("nf.look") ?? "{}").font;
   } catch {
-    /* без рукописного шрифта тоже работаем */
+    /* нет сохранённых настроек */
   }
+  await Promise.all([loadFont(fontById("caveat")), loadFont(fontById(saved))]);
   clearTextCache();
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>

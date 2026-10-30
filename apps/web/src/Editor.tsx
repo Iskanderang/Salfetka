@@ -138,7 +138,7 @@ export function ItemEditor({ item, index, count, palette, autoColor, colorLocked
         </div>
       )}
 
-      <div className="pop-section">Цвет</div>
+      <div className="pop-section">Цвет {item.color && !colorLocked && <span className="own-color">· свой, палитра его не меняет (выбор палитры сбросит)</span>}</div>
       {colorLocked ? (
         <div className="hint">У этого стиля своя палитра — цвета пунктов задаёт мел.</div>
       ) : (

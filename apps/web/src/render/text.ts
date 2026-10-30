@@ -18,8 +18,9 @@ function wrap(text: string, width: number, size: number, weight: number, font: s
     // слово длиннее строки — режем по символам
     while (measure(word, size, weight, font) > width && word.length > 1) {
       broken = true;
-      let cut = word.length - 1;
-      while (cut > 1 && measure(word.slice(0, cut) + "-", size, weight, font) > width) cut--;
+      // на новую строку уносим минимум 3 буквы, а не одинокое «-е»
+      let cut = Math.max(2, word.length - 3);
+      while (cut > 2 && measure(word.slice(0, cut) + "-", size, weight, font) > width) cut--;
       if (line) {
         lines.push(line);
         line = "";

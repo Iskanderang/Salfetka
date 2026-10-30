@@ -27,7 +27,8 @@ type TextProps = {
 };
 
 /** Многострочный текст, уже подогнанный через fitText. */
-export function Text({ fit, x, y, color, weight = 400, anchor = "middle", valign = "top" }: TextProps) {
+/** Без weight жирность наследуется от корня SVG — это вес основного текста из настроек. */
+export function Text({ fit, x, y, color, weight, anchor = "middle", valign = "top" }: TextProps) {
   if (!fit.lines.length) return null;
   const lh = fit.size * LINE;
   const total = fit.lines.length * lh;

@@ -36,7 +36,7 @@ const NOLINE: Omit<Spec, "fill" | "stroke" | "sw"> = { on: "", onMuted: "", icon
 /** Небольшой текст (номера, VS) — шрифт наследуется от стиля. */
 function Small(props: { x: number; y: number; size: number; color: string; anchor?: "start" | "middle" | "end"; children: ReactNode; p: Paint }) {
   return (
-    <text x={props.x} y={props.y} fontSize={props.size * props.p.style.textScale} fontWeight={700} fill={props.color} textAnchor={props.anchor ?? "start"}>
+    <text x={props.x} y={props.y} fontSize={props.size * props.p.textScale} fontWeight={700} fill={props.color} textAnchor={props.anchor ?? "start"}>
       {props.children}
     </text>
   );
@@ -169,8 +169,23 @@ const cycle: Renderer = (v, p, top) => {
 const timeline: Renderer = (v, p, top) => {
   const n = v.items.length;
   const step = INNER / n;
-  const cardW = Math.min(280, step * 2 - 24);
+  const cardGap = 16;
+  const left = PAD / 2;
+  const right = W - PAD / 2;
+  // карточки чередуются сверху/снизу; на каждой стороне до ceil(n/2) штук — все должны влезть в ряд
+  const perSide = Math.ceil(n / 2);
+  const cardW = Math.min(280, (right - left - cardGap * (perSide - 1)) / perSide);
   const tw = cardW - 32;
+  const centers = v.items.map((_, i) => PAD + (i + 0.5) * step);
+  const cardXs: number[] = [];
+  for (const side of [0, 1]) {
+    const idx = centers.map((_, i) => i).filter((i) => i % 2 === side);
+    // ставим по центру над своей точкой, затем раздвигаем слева направо и поджимаем от правого края
+    const xs = idx.map((i) => centers[i] - cardW / 2);
+    for (let k = 0; k < xs.length; k++) xs[k] = Math.max(xs[k], k ? xs[k - 1] + cardW + cardGap : left);
+    for (let k = xs.length - 1; k >= 0; k--) xs[k] = Math.min(xs[k], k < xs.length - 1 ? xs[k + 1] - cardW - cardGap : right - cardW);
+    idx.forEach((i, k) => (cardXs[i] = xs[k]));
+  }
   const cards = v.items.map((it) => {
     const value = p.fit(it.value, tw, 22, 1, 800, 16);
     const label = p.fit(it.label, tw, 18, 2, p.labelWeight, 14);
@@ -182,8 +197,8 @@ const timeline: Renderer = (v, p, top) => {
   const lineY = top + cardH + gapToLine;
 
   const body = v.items.map((it, i) => {
-    const x = PAD + (i + 0.5) * step;
-    const cardX = Math.max(PAD / 2, Math.min(W - PAD / 2 - cardW, x - cardW / 2));
+    const x = centers[i];
+    const cardX = cardXs[i];
     const kx = cardX + cardW / 2;
     const up = i % 2 === 0;
     const c = p.color(i);
@@ -205,7 +220,7 @@ const timeline: Renderer = (v, p, top) => {
         <Text fit={k.value} x={kx} y={vy} color={accentText(p, c)} weight={800} />
         <Text fit={k.label} x={kx} y={ly} color={card.on} weight={p.labelWeight} />
         <Text fit={k.text} x={kx} y={y} color={card.onMuted} />
-        {!p.sketchy && <circle cx={x} cy={lineY} r={31} fill={p.t.bg} />}
+        <circle cx={x} cy={lineY} r={p.sketchy ? 30 : 31} fill={p.t.bg} />
         {p.circle(x, lineY, 26, dot)}
         {p.icon(it.icon, x, lineY, 24, dot.icon, i)}
       </g>
@@ -414,19 +429,19 @@ const compare: Renderer = (v, p, top) => {
 
 /** Центральный узел-«таблетка» с заголовком (иерархия, карта мыслей). */
 function rootPill(p: Paint, title: string, cx: number, y: number, maxW: number) {
-  const fit = p.fit(title, maxW - 60, 26, 2, p.style.titleWeight, 18);
+  const fit = p.fit(title, maxW - 60, 26, 2, p.titleWeight, 18);
   const h = Math.max(76, textHeight(fit) + 32);
   const w = Math.min(maxW, Math.max(260, 70 + max(fit.lines.map((l) => l.length * fit.size * 0.55))));
   // от руки тёмная штриховка «съедает» текст — подсвечиваем узел маркером
-  const base = p.spec("accent", p.sketchy ? p.color(3) : p.style.accent === "soft" ? p.color(0) : p.t.title);
-  const sp: Spec = !p.sketchy && p.style.accent === "solid" ? { ...base, on: p.t.bg } : base;
+  const base = p.spec("accent", p.sketchy ? p.color(3) : p.style.accent === "soft" ? p.color(0) : p.base.title);
+  const sp: Spec = !p.sketchy && p.style.accent === "solid" ? { ...base, on: p.base.bg } : base;
   return {
     w,
     h,
     node: (
       <g key="root" data-title="1">
         {p.rect(cx - w / 2, y, w, h, h / 2, sp)}
-        <Text fit={fit} x={cx} y={y + h / 2} valign="middle" color={sp.on} weight={p.style.titleWeight} />
+        <Text fit={fit} x={cx} y={y + h / 2} valign="middle" color={sp.on} weight={p.titleWeight} />
       </g>
     ),
   };

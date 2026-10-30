@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import rough from "roughjs";
+import type { Drawable } from "roughjs/bin/core";
 import type { Visual } from "@napkin/shared";
 import { fitText, type Fitted } from "./text";
-import { lighten, mix, shade, tint, type Theme } from "./themes";
+import { contrast, lighten, mix, shade, tint, withBackground, type Theme } from "./themes";
 import type { StyleDef } from "./styles";
+import { fontById } from "./fonts";
 import { Icon } from "./primitives";
 
 /** Как закрасить фигуру и чем писать поверх неё. */
@@ -45,20 +47,57 @@ export function topRoundedPath(x: number, y: number, w: number, h: number, r: nu
  * Раскладки описывают ЧТО нарисовать (прямоугольник-акцент, карточку, линию),
  * а кисть решает КАК: заливкой, контуром, пастелью или «от руки».
  */
+/** Пользовательские настройки текста и штриховки — поверх стиля. */
+export type Look = {
+  /** id шрифта из FONTS или undefined — «как в стиле» */
+  font?: string;
+  /** множитель размера текста, 0.8–1.4 */
+  size: number;
+  /** -1 тоньше, 0 как в стиле, 1 жирнее */
+  weight: -1 | 0 | 1;
+  /** свой цвет текста (#RRGGBB) или undefined — из темы */
+  color?: string;
+  /** интенсивность штриховки «Салфетки» и «Доски», 0.15–1 */
+  intensity: number;
+  /** свой фон схемы (#RRGGBB) или undefined — фон стиля/палитры */
+  bg?: string;
+};
+
+export const DEFAULT_LOOK: Look = { size: 1, weight: 0, intensity: 1 };
+
 export class Paint {
+  /** Цвета с учётом пользовательского цвета текста */
   readonly t: Theme;
+  /** Цвета стиля без пользовательских правок (фон шапки, корневой узел) */
+  readonly base: Theme;
   readonly font: string;
+  readonly textColorApplied: boolean;
+  private readonly scale: number;
   constructor(
     readonly style: StyleDef,
     theme: Theme,
     readonly visual: Visual,
+    readonly look: Look = DEFAULT_LOOK,
   ) {
-    this.t = style.fixedTheme ?? { ...theme, ...style.override };
-    this.font = style.font;
+    const styled = style.fixedTheme ?? { ...theme, ...style.override };
+    this.base = look.bg ? withBackground(styled, look.bg) : styled;
+    // свой цвет текста применяем, только если он читается на фоне стиля (например, тёмный на «Доске» — нет)
+    this.textColorApplied = !!look.color && contrast(look.color, this.base.bg) >= 2.5;
+    this.t = this.textColorApplied ? { ...this.base, title: look.color!, text: look.color!, muted: mix(look.color!, this.base.bg, 0.3) } : this.base;
+    const f = fontById(look.font);
+    this.font = f ? f.stack : style.font;
+    this.scale = (f ? f.scale : style.textScale) * look.size;
   }
 
   get sketchy() {
     return !!this.style.sketch;
+  }
+
+  /** Чернила «Салфетки»; на тёмном фоне становятся светлыми. У «Доски» чернил нет — линии цветным мелом. */
+  get ink(): string | undefined {
+    const ink = this.style.sketch?.ink;
+    if (!ink) return undefined;
+    return contrast(ink, this.t.bg) < 3 ? "#EEEEEE" : ink;
   }
 
   /** Цвет пункта: свой (если задан) или из палитры. */
@@ -72,20 +111,40 @@ export class Paint {
     return base * this.style.radius;
   }
 
-  /** Подгонка текста с учётом шрифта стиля. */
+  /** Подгонка текста с учётом шрифта, размера и жирности. Вес 400 = основной текст. */
   fit(text: string, width: number, size: number, maxLines: number, weight = 400, minSize = Math.round(size * 0.75)): Fitted {
-    const k = this.style.textScale;
-    return fitText(text, width, Math.round(size * k), maxLines, weight, Math.round(minSize * k), this.font);
+    const k = this.scale;
+    const w = weight === 400 ? this.bodyWeight : weight;
+    return fitText(text, width, Math.round(size * k), maxLines, w, Math.round(minSize * k), this.font);
+  }
+
+  get textScale() {
+    return this.scale;
+  }
+
+  get bodyWeight() {
+    return this.look.weight > 0 ? 600 : 400;
   }
 
   get labelWeight() {
-    return this.style.labelWeight;
+    return this.look.weight > 0 ? 800 : this.look.weight < 0 ? 400 : this.style.labelWeight;
+  }
+
+  get titleWeight() {
+    return this.look.weight > 0 ? 800 : this.look.weight < 0 ? 500 : this.style.titleWeight;
   }
 
   spec(role: Role, c: string): Spec {
+    const sp = this.rawSpec(role, c);
+    // свой цвет текста — для текста на карточках и фоне; на ярких заливках оставляем контрастный
+    if (this.textColorApplied && (role === "card" || role === "plain")) return { ...sp, on: this.t.text, onMuted: this.t.muted };
+    return sp;
+  }
+
+  private rawSpec(role: Role, c: string): Spec {
     const t = this.t;
     const s = this.style;
-    const ink = s.sketch?.ink;
+    const ink = this.ink;
     if (s.sketch) {
       // «от руки»: штриховка цветом, контур чернилами (или мелом)
       const line = ink ?? c;
@@ -116,12 +175,23 @@ export class Paint {
 
   // ─── Фигуры ───────────────────────────────────────────────
 
-  private rough(drawable: ReturnType<typeof gen.path>, key?: string | number): ReactNode {
+  /** Штриховка и цветной мел приглушаются ползунком «интенсивность»; чернильный контур — нет. */
+  private rough(drawable: Drawable, key?: string | number, underlay?: ReactNode): ReactNode {
+    const o = drawable.options;
+    const k = this.look.intensity;
+    const coloredLine = !this.style.sketch?.ink;
     return (
       <g key={key}>
-        {gen.toPaths(drawable).map((p, i) => (
-          <path key={i} d={p.d} stroke={p.stroke} strokeWidth={p.strokeWidth} fill={p.fill ?? "none"} strokeLinecap="round" strokeLinejoin="round" />
-        ))}
+        {underlay}
+        {drawable.sets.map((set, i) => {
+          const d = gen.opsToPath(set);
+          if (set.type === "fillSketch")
+            return <path key={i} d={d} stroke={o.fill} strokeWidth={o.fillWeight < 0 ? o.strokeWidth / 2 : o.fillWeight} fill="none" opacity={k} strokeLinecap="round" />;
+          if (set.type === "fillPath") return <path key={i} d={d} fill={o.fill} stroke="none" opacity={k} />;
+          return (
+            <path key={i} d={d} stroke={o.stroke} strokeWidth={o.strokeWidth} fill="none" opacity={coloredLine ? 0.45 + 0.55 * k : 1} strokeLinecap="round" strokeLinejoin="round" />
+          );
+        })}
       </g>
     );
   }
@@ -144,8 +214,13 @@ export class Paint {
     };
   }
 
+  /** Штриховка прозрачна: без сплошной подложки сквозь фигуру видны линии и кольца позади неё. */
+  private solid(sp: Spec) {
+    return sp.fill !== "none" && sp.fill !== "transparent";
+  }
+
   path(d: string, sp: Spec, key?: string | number, seedXY: number[] = [d.length]): ReactNode {
-    if (this.sketchy) return this.rough(gen.path(d, this.roughOpts(sp, hash(...seedXY))), key);
+    if (this.sketchy) return this.rough(gen.path(d, this.roughOpts(sp, hash(...seedXY))), key, this.solid(sp) ? <path d={d} fill={this.t.bg} /> : null);
     return <path key={key} d={d} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} />;
   }
 
@@ -160,12 +235,17 @@ export class Paint {
   }
 
   circle(cx: number, cy: number, r: number, sp: Spec, key?: string | number): ReactNode {
-    if (this.sketchy) return this.rough(gen.circle(cx, cy, r * 2, this.roughOpts(sp, hash(cx, cy, r))), key);
+    if (this.sketchy) return this.rough(gen.circle(cx, cy, r * 2, this.roughOpts(sp, hash(cx, cy, r))), key, this.solid(sp) ? <circle cx={cx} cy={cy} r={r} fill={this.t.bg} /> : null);
     return <circle key={key} cx={cx} cy={cy} r={r} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} />;
   }
 
   poly(pts: [number, number][], sp: Spec, key?: string | number): ReactNode {
-    if (this.sketchy) return this.rough(gen.polygon(pts, this.roughOpts(sp, hash(...pts.flat()))), key);
+    if (this.sketchy)
+      return this.rough(
+        gen.polygon(pts, this.roughOpts(sp, hash(...pts.flat()))),
+        key,
+        this.solid(sp) ? <polygon points={pts.map((q) => q.join(",")).join(" ")} fill={this.t.bg} /> : null,
+      );
     return <polygon key={key} points={pts.map((p) => p.join(",")).join(" ")} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeLinejoin="round" />;
   }
 
@@ -187,22 +267,27 @@ export class Paint {
 
   /** Иконка пункта; data-icon нужен для клика «заменить иконку». */
   icon(name: string, cx: number, cy: number, size: number, color: string, item?: number): ReactNode {
+    // от руки иконка пункта стоит на «окошке» без штриховки — иначе штрихи её перечёркивают
+    const plate = this.sketchy && item !== undefined;
     return (
-      <g data-icon={item} filter={this.sketchy ? "url(#nf-wobble)" : undefined}>
-        <Icon name={name} cx={cx} cy={cy} size={size} color={color} strokeWidth={this.style.iconStroke} />
+      <g data-icon={item}>
+        {plate && <circle cx={cx} cy={cy} r={size * 0.72} fill={this.t.bg} />}
+        <g filter={this.sketchy ? "url(#nf-wobble)" : undefined}>
+          <Icon name={name} cx={cx} cy={cy} size={size} color={color} strokeWidth={this.style.iconStroke} />
+        </g>
       </g>
     );
   }
 
   /** Линии-связки и вторичные элементы. */
   get lineColor() {
-    return this.sketchy ? (this.style.sketch!.ink ?? this.t.line) : this.t.line;
+    return this.sketchy ? (this.ink ?? this.t.line) : this.t.line;
   }
 
   /** Маркер-подчёркивание для «Салфетки». */
   marker(x1: number, x2: number, y: number, color: string): ReactNode {
     if (!this.sketchy) return null;
-    return this.curve(`M${x1},${y} Q${(x1 + x2) / 2},${y - 6} ${x2},${y + 2}`, tint(color, 0.75), 7, "marker");
+    return this.curve(`M${x1},${y} Q${(x1 + x2) / 2},${y - 6} ${x2},${y + 2}`, tint(color, 0.75 * this.look.intensity), 7, "marker");
   }
 
   /** Мягкий фон-подложка (для пастели). */

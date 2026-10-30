@@ -63,7 +63,7 @@ input, select, textarea { font: inherit; color: inherit; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
-.themes { display: flex; gap: 8px; }
+.themes { display: flex; gap: 6px; flex-wrap: wrap; }
 .swatch { width: 26px; height: 26px; border-radius: 50%; padding: 0; border: 2px solid #fff; box-shadow: 0 0 0 1px #D9DCE5; }
 .swatch.active { outline: 2px solid; outline-offset: 2px; }
 .actions { display: flex; gap: 8px; align-items: center; }
@@ -94,8 +94,9 @@ button.primary-soft { background: #EEF2FF; border-color: #C7D2FE; color: #3730A3
 .svg-main [data-item]:hover, .svg-main [data-title]:hover { opacity: 0.82; }
 
 .menu-wrap { position: relative; }
-.menu { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 6px; display: flex; flex-direction: column; min-width: 190px; box-shadow: 0 10px 30px rgba(0,0,0,.12); z-index: 20; }
-.menu button { border: none; text-align: left; border-radius: 8px; }
+.menu { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 6px; display: flex; flex-direction: column; width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,.12); z-index: 20; }
+.menu button { border: none; text-align: left; border-radius: 8px; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; }
+.menu button small { color: #6B7280; font-size: 12px; line-height: 1.35; }
 .menu button:hover { background: #EEF2FF; }
 
 .popover { position: absolute; z-index: 30; background: #fff; border: 1px solid #E5E7EB; border-radius: 14px; box-shadow: 0 16px 40px rgba(15,23,42,.18); padding: 12px; }
@@ -120,3 +121,29 @@ button.primary-soft { background: #EEF2FF; border-color: #C7D2FE; color: #3730A3
 .color-custom { position: relative; width: 28px; height: 28px; display: grid; place-items: center; cursor: pointer; border: 1px dashed #C7CBD6; border-radius: 50%; font-size: 14px; }
 .color-custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .swatch:disabled { opacity: .3; }
+
+.look-panel { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 14px; background: #fff; border: 1px solid #E5E7EB; border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; }
+.look-title { font-weight: 700; color: #4F46E5; align-self: center; }
+.look-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #6B7280; }
+.look-field.grow { flex: 1; min-width: 160px; }
+.look-field select { border: 1px solid #E5E7EB; border-radius: 8px; padding: 6px 8px; background: #fff; font-size: 14px; min-width: 150px; }
+.stepper, .segmented, .color-pick, .range-row { display: flex; align-items: center; gap: 4px; }
+.stepper b { min-width: 44px; text-align: center; color: #111827; font-size: 13px; }
+.stepper button { padding: 4px 10px; }
+.segmented button { padding: 5px 10px; font-size: 13px; border-radius: 0; }
+.segmented button:first-child { border-radius: 8px 0 0 8px; }
+.segmented button:last-child { border-radius: 0 8px 8px 0; }
+.segmented button + button { margin-left: -5px; }
+.segmented button.active { background: #EEF2FF; border-color: #6366F1; color: #3730A3; position: relative; }
+.color-swatch { position: relative; width: 30px; height: 30px; border-radius: 8px; border: 2px solid #fff; box-shadow: 0 0 0 1px #D9DCE5; cursor: pointer; }
+.color-swatch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.range-row input { flex: 1; accent-color: #4F46E5; }
+.range-row b { min-width: 40px; color: #111827; font-size: 13px; }
+.link.reset { align-self: center; }
+.look-warn { color: #B45309; font-size: 11px; max-width: 170px; }
+.bg-row { display: flex; align-items: center; gap: 4px; }
+.bg-dot { width: 24px; height: 24px; padding: 0; border-radius: 6px; border: 1px solid #D9DCE5; font-size: 11px; font-weight: 700; color: #6B7280; display: grid; place-items: center; }
+.bg-dot.active { outline: 2px solid #4F46E5; outline-offset: 1px; }
+.bg-dot.custom { position: relative; cursor: pointer; border-style: dashed; background: #fff; }
+.bg-dot.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.own-color { color: #B45309; }
