@@ -12,6 +12,8 @@
 - **Настройки текста**: 6 бесплатных шрифтов с кириллицей (Inter, Montserrat, Rubik, Comfortaa, PT Serif, Caveat),
   размер 80–140%, жирность, свой цвет текста. Цвет, нечитаемый на фоне стиля, автоматически заменяется цветом стиля.
 - **Интенсивность маркера/мела** для «Салфетки» и «Доски»: приглушает штриховку и цветной мел, чернильный контур не трогает.
+- **Своя видеокарта или облако**: кнопка «⚙ Нейросеть» — LM Studio локально или OpenRouter с бесплатными моделями «:free»
+  (свой ключ, проверка ключа пробной генерацией, выбор модели). Ключ хранится в браузере и идёт только через локальный API-сервер.
 - **«Ещё вариант»**: тот же текст — другая группировка и раскладки.
 - **Экспорт**: PNG (документы, соцсети), PNG без фона (слайды PowerPoint/Keynote/Canva), SVG (Figma, сайты, печать). Шрифт встраивается в файл.
 
@@ -30,6 +32,14 @@
    и кэшируется в `apps/api/.cache`. Русский поисковый запрос сначала переводится LLM.
 4. Рендер — обычный код. Раскладка описывает, ЧТО рисовать, «кисть» (`render/paint.tsx`) решает КАК:
    заливкой, контуром, пастелью или от руки (rough.js).
+
+## Без видеокарты — OpenRouter
+
+1. Зарегистрируйтесь на [openrouter.ai](https://openrouter.ai/).
+2. Откройте [API Keys](https://openrouter.ai/keys).
+3. Нажмите **Create Key**, задайте название и лимит расходов (для моделей «:free» хватит нулевого).
+4. Скопируйте ключ `sk-or-v1-…` и сохраните его.
+5. В Napkin Free: **⚙ Нейросеть** → «Облако — OpenRouter» → вставьте ключ → «Проверить ключ».
 
 ## Запуск
 
@@ -51,7 +61,7 @@
 
 | Переменная | По умолчанию | Что это |
 |---|---|---|
-| `LLM_BASE_URL` | `http://localhost:1234/v1` | Любой OpenAI-совместимый сервер (Ollama: `http://localhost:11434/v1`, Groq, OpenRouter…) |
+| `LLM_BASE_URL` | `http://localhost:1234/v1` | Любой OpenAI-совместимый сервер (Ollama: `http://localhost:11434/v1`, vLLM…) |
 | `LLM_MODEL` | `google/gemma-4-12b-qat` | ID модели (`lms ps` / `curl localhost:1234/v1/models`) |
 | `EMBED_MODEL` | `text-embedding-nomic-embed-text-v1.5` | Модель для подбора иконок |
 | `LLM_API_KEY` | `lm-studio` | Для облачных провайдеров — настоящий ключ |
@@ -63,7 +73,8 @@
 packages/shared/src/index.ts      контракт: схема ответа LLM, тип Visual, раскладки
 apps/api/src/llm.ts               промпт, few-shot пример, вызов модели, валидация, перевод запросов
 apps/api/src/icons.ts             индекс иконок, смысловой поиск, подбор без повторов
-apps/api/src/server.ts            /api/visualize, /api/icons/search, /api/health
+apps/api/src/providers.ts         сервисы нейросетей: адреса, модели, ключи, понятные ошибки
+apps/api/src/server.ts            /api/visualize, /api/icons/search, /api/health, /api/models, /api/providers
 apps/web/src/render/styles.ts     описания 6 стилей
 apps/web/src/render/paint.tsx     «кисть»: фигуры в нужном стиле (в т.ч. rough.js)
 apps/web/src/render/layouts.tsx   11 раскладок
@@ -72,6 +83,8 @@ apps/web/src/render/export.ts     PNG / прозрачный PNG / SVG со вс
 apps/web/src/render/fonts.ts      шрифты Fontsource и их встраивание в экспорт
 apps/web/src/LookPanel.tsx        панель «Оформление»: шрифт, размер, жирность, цвет, фон, интенсивность
 apps/web/src/Editor.tsx           окно правки пункта: иконки, поиск, цвета
+apps/web/src/AiDialog.tsx         окно «⚙ Нейросеть»: своя видеокарта / облако, ключ, модель
+apps/web/src/Help.tsx             справка: установка, использование, дополнения, лицензии
 apps/web/src/App.tsx              интерфейс
 ```
 

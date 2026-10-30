@@ -94,8 +94,47 @@ export type IconSearchRequest = { query: string; limit?: number };
 export type IconSearchResponse = { icons: string[]; query: string; semantic: boolean };
 export type HealthResponse = {
   ok: boolean;
+  provider: ProviderId;
   model: string;
   baseUrl: string;
   error?: string;
   icons: { total: number; semantic: boolean; status: string };
 };
+
+// ─── Где работает нейросеть ──────────────────────────────────
+
+export const PROVIDER_IDS = ["local", "openrouter"] as const;
+export type ProviderId = (typeof PROVIDER_IDS)[number];
+
+export type ProviderInfo = {
+  id: ProviderId;
+  name: string;
+  cloud: boolean;
+  defaultModel: string;
+  /** Есть ли у сервиса модель для подбора иконок по смыслу */
+  embeddings: boolean;
+  /** Где бесплатно получить ключ */
+  keyUrl: string;
+  /** Коротко: чем хорош и какие ограничения */
+  note: string;
+  /** Что происходит с текстами */
+  privacy: string;
+};
+
+/** Выбор пользователя; хранится в его браузере. Ключи уходят только на локальный API-сервер. */
+export type AiSettings = {
+  provider: ProviderId;
+  keys: Partial<Record<ProviderId, string>>;
+  models: Partial<Record<ProviderId, string>>;
+};
+
+export type ModelsResponse = {
+  models: string[];
+  error?: string;
+  /** Пробная генерация выбранной моделью: какой режим JSON подошёл */
+  probe?: string;
+  probeError?: string;
+};
+
+/** Заголовки, в которых браузер передаёт выбор нейросети API-серверу. */
+export const AI_HEADERS = { provider: "x-ai-provider", key: "x-ai-key", model: "x-ai-model" } as const;

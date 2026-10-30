@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { LAYOUTS, LAYOUT_LABELS, type HealthResponse, type Item, type Layout, type Visual } from "@napkin/shared";
-import { health, visualize } from "./api";
+import { LAYOUTS, LAYOUT_LABELS, PROVIDER_IDS, type AiSettings, type HealthResponse, type Item, type Layout, type ProviderInfo, type Visual } from "@napkin/shared";
+import { health, providers as fetchProviders, setAiSettings, visualize } from "./api";
+import { AiDialog } from "./AiDialog";
 import { VisualSvg } from "./render/VisualSvg";
 import { THEMES } from "./render/themes";
 import { STYLES, styleById } from "./render/styles";
@@ -9,6 +10,7 @@ import { iconExists } from "./render/primitives";
 import { copyPng, download, slug, svgToPng, svgToString } from "./render/export";
 import { ItemEditor, Popover, TitleEditor } from "./Editor";
 import { LookPanel } from "./LookPanel";
+import { Help, HELP_TABS, type HelpTab } from "./Help";
 
 const SAMPLE = `Как запустить свой продукт с нуля.
 
@@ -64,6 +66,16 @@ export function App() {
   const [pop, setPop] = useState<Pop>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const [help, setHelp] = useState<HelpTab | null>(null);
+  const [ai, setAi] = useLocal<AiSettings>("nf.ai", { provider: "local", keys: {}, models: {} }, (a) => ({
+    provider: PROVIDER_IDS.includes(a.provider) ? a.provider : "local",
+    keys: a.keys ?? {},
+    models: a.models ?? {},
+  }));
+  const [aiOpen, setAiOpen] = useState(false);
+  const [providerList, setProviderList] = useState<ProviderInfo[]>([]);
+  // заголовки для API выставляем сразу при рендере, чтобы первый же запрос ушёл в выбранный сервис
+  setAiSettings(ai);
   const svgRef = useRef<SVGSVGElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -75,10 +87,21 @@ export function App() {
   const source = selected || text.trim();
 
   useEffect(() => {
-    health().then(setStatus);
-    const id = setInterval(() => health().then(setStatus), 10000);
-    return () => clearInterval(id);
+    fetchProviders().then(setProviderList);
   }, []);
+
+  // при смене сервиса/ключа/модели статус перепроверяется сразу
+  useEffect(() => {
+    setStatus(null);
+    const t = setTimeout(() => health().then(setStatus), 400);
+    const id = setInterval(() => health().then(setStatus), 10000);
+    return () => {
+      clearTimeout(t);
+      clearInterval(id);
+    };
+  }, [ai]);
+
+  const providerName = providerList.find((p) => p.id === ai.provider)?.name ?? (ai.provider === "local" ? "Своя видеокарта" : "OpenRouter");
 
   useEffect(() => {
     const onSel = () => {
@@ -202,9 +225,26 @@ export function App() {
         <div className="logo">
           <span className="logo-mark">⚡</span> Napkin Free
         </div>
+        <button
+          className={`ai-btn ${ai.provider === "local" ? "" : "cloud"}`}
+          onClick={() => {
+            if (!providerList.length) fetchProviders().then(setProviderList);
+            setAiOpen(true);
+          }}
+          title="Где работает нейросеть"
+        >
+          ⚙ {ai.provider === "local" ? "💻" : "☁️"} {providerName}
+        </button>
+        <nav className="help-nav">
+          {HELP_TABS.map((t) => (
+            <button key={t.id} className="help-btn" onClick={() => setHelp(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </nav>
         <div className={`status ${status?.ok ? "ok" : "bad"}`} title={status?.error ?? `${status?.baseUrl} · иконки: ${status?.icons.status}`}>
           <span className="dot" />
-          {status === null ? "проверка…" : status.ok ? `${status.model} · иконки: ${status.icons.semantic ? "по смыслу" : "по словам"}` : status.error}
+          {status === null ? "проверка…" : status.ok ? `${status.model} · иконки: ${status.icons.semantic ? "по смыслу" : "по словам"}` : "нет связи с нейросетью"}
         </div>
       </header>
 
@@ -252,6 +292,26 @@ export function App() {
         </section>
 
         <section className="pane canvas">
+          {status && !status.ok && (
+            <div className="error">
+              ⚠ Нейросеть не отвечает: {status.error}{" "}
+              {status.provider === "local" ? (
+                <>
+                  <button className="link" onClick={() => setHelp("install")}>
+                    Как запустить →
+                  </button>{" "}
+                  или{" "}
+                  <button className="link" onClick={() => setAiOpen(true)}>
+                    работать через облако →
+                  </button>
+                </>
+              ) : (
+                <button className="link" onClick={() => setAiOpen(true)}>
+                  Открыть настройки нейросети →
+                </button>
+              )}
+            </div>
+          )}
           {error && <div className="error">⚠ {error}</div>}
           {!current && !loading && (
             <div className="empty">
@@ -389,6 +449,19 @@ export function App() {
         </section>
       </main>
       {toast && <div className="toast">{toast}</div>}
+      {help && <Help tab={help} onTab={setHelp} onClose={() => setHelp(null)} />}
+      {aiOpen && (
+        <AiDialog
+          settings={ai}
+          providers={providerList}
+          onChange={setAi}
+          onClose={() => setAiOpen(false)}
+          onInstallHelp={() => {
+            setAiOpen(false);
+            setHelp("install");
+          }}
+        />
+      )}
     </div>
   );
 }
