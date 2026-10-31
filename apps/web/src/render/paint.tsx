@@ -234,8 +234,10 @@ export class Paint {
     return this.path(topRoundedPath(x, y, w, h, this.r(r)), sp, key, [x, y, w, h, 7]);
   }
 
-  circle(cx: number, cy: number, r: number, sp: Spec, key?: string | number): ReactNode {
-    if (this.sketchy) return this.rough(gen.circle(cx, cy, r * 2, this.roughOpts(sp, hash(cx, cy, r))), key, this.solid(sp) ? <circle cx={cx} cy={cy} r={r} fill={this.t.bg} /> : null);
+  /** see-through: без сплошной подложки — для фигур, которые должны просвечивать (диаграмма Венна). */
+  circle(cx: number, cy: number, r: number, sp: Spec, key?: string | number, seeThrough = false): ReactNode {
+    if (this.sketchy)
+      return this.rough(gen.circle(cx, cy, r * 2, this.roughOpts(sp, hash(cx, cy, r))), key, this.solid(sp) && !seeThrough ? <circle cx={cx} cy={cy} r={r} fill={this.t.bg} /> : null);
     return <circle key={key} cx={cx} cy={cy} r={r} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} />;
   }
 

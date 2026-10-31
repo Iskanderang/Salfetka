@@ -1,6 +1,7 @@
 import { forwardRef, useMemo } from "react";
 import type { Layout, Visual } from "@napkin/shared";
-import { RENDERERS, NO_HEADER, W } from "./layouts";
+import { W } from "./layouts";
+import { RENDERERS, NO_HEADER } from "./renderers";
 import { Paint, DEFAULT_LOOK, type Look } from "./paint";
 import { Text } from "./primitives";
 import { textHeight } from "./text";

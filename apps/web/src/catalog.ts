@@ -7,15 +7,15 @@ import type { Layout } from "@napkin/shared";
 export type Category = { id: string; name: string; icon: string; layouts: Layout[] };
 
 export const CATEGORIES: Category[] = [
-  { id: "process", name: "Процесс", icon: "➜", layouts: ["steps", "cycle", "funnel"] },
-  { id: "timeline", name: "Хронология", icon: "⏱", layouts: ["timeline", "steps"] },
-  { id: "compare", name: "Сравнение", icon: "⚖", layouts: ["compare", "matrix"] },
+  { id: "process", name: "Процесс", icon: "➜", layouts: ["steps", "stairs", "roadmap", "cycle", "funnel"] },
+  { id: "timeline", name: "Хронология", icon: "⏱", layouts: ["timeline", "vtimeline", "roadmap", "steps"] },
+  { id: "compare", name: "Сравнение", icon: "⚖", layouts: ["compare", "proscons", "venn", "matrix"] },
   { id: "data", name: "Данные", icon: "📊", layouts: ["stats", "funnel"] },
-  { id: "hierarchy", name: "Иерархия", icon: "🔺", layouts: ["hierarchy", "pyramid"] },
-  { id: "parts", name: "Части целого", icon: "🧩", layouts: ["cards", "mindmap"] },
-  { id: "ideas", name: "Мозговой штурм", icon: "💡", layouts: ["mindmap", "cards", "matrix"] },
-  { id: "frameworks", name: "Бизнес-фреймворки", icon: "💼", layouts: ["matrix", "pyramid", "funnel"] },
-  { id: "metaphors", name: "Визуальные метафоры", icon: "🎭", layouts: [] },
+  { id: "hierarchy", name: "Иерархия", icon: "🔺", layouts: ["hierarchy", "pyramid", "target"] },
+  { id: "parts", name: "Части целого", icon: "🧩", layouts: ["hub", "cards", "mindmap", "venn"] },
+  { id: "ideas", name: "Мозговой штурм", icon: "💡", layouts: ["mindmap", "hub", "cards", "matrix"] },
+  { id: "frameworks", name: "Бизнес-фреймворки", icon: "💼", layouts: ["swot", "pestel", "matrix", "pyramid", "funnel", "target"] },
+  { id: "metaphors", name: "Визуальные метафоры", icon: "🎭", layouts: ["stairs", "roadmap", "target", "pyramid", "funnel"] },
 ];
 
 export const visibleCategories = () => CATEGORIES.filter((c) => c.layouts.length > 0);

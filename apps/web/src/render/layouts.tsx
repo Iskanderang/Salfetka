@@ -6,22 +6,22 @@ import { tint } from "./themes";
 import type { Paint, Spec } from "./paint";
 
 export const W = 1000;
-const PAD = 40;
-const INNER = W - PAD * 2;
+export const PAD = 40;
+export const INNER = W - PAD * 2;
 
 export type Rendered = { height: number; body: ReactNode };
-type Renderer = (v: Visual, p: Paint, top: number) => Rendered;
+export type Renderer = (v: Visual, p: Paint, top: number) => Rendered;
 
-const max = (xs: number[]) => Math.max(0, ...xs);
+export const max = (xs: number[]) => Math.max(0, ...xs);
 
-function grid(n: number, cols: number, gap: number) {
+export function grid(n: number, cols: number, gap: number) {
   const rows = Math.ceil(n / cols);
   const cellW = (INNER - gap * (cols - 1)) / cols;
   return { rows, cellW };
 }
 
 /** x-координата ячейки с центрированием неполного последнего ряда. */
-function cellX(i: number, n: number, cols: number, cellW: number, gap: number) {
+export function cellX(i: number, n: number, cols: number, cellW: number, gap: number) {
   const row = Math.floor(i / cols);
   const inRow = Math.min(cols, n - row * cols);
   const rowW = inRow * cellW + (inRow - 1) * gap;
@@ -29,12 +29,12 @@ function cellX(i: number, n: number, cols: number, cellW: number, gap: number) {
 }
 
 /** Цвет чисел и акцентного текста вне фигур. */
-const accentText = (p: Paint, c: string) => (p.style.accent === "soft" ? p.spec("card", c).icon : c);
+export const accentText = (p: Paint, c: string) => (p.style.accent === "soft" ? p.spec("card", c).icon : c);
 
-const NOLINE: Omit<Spec, "fill" | "stroke" | "sw"> = { on: "", onMuted: "", icon: "" };
+export const NOLINE: Omit<Spec, "fill" | "stroke" | "sw"> = { on: "", onMuted: "", icon: "" };
 
 /** Небольшой текст (номера, VS) — шрифт наследуется от стиля. */
-function Small(props: { x: number; y: number; size: number; color: string; anchor?: "start" | "middle" | "end"; children: ReactNode; p: Paint }) {
+export function Small(props: { x: number; y: number; size: number; color: string; anchor?: "start" | "middle" | "end"; children: ReactNode; p: Paint }) {
   return (
     <text x={props.x} y={props.y} fontSize={props.size * props.p.textScale} fontWeight={700} fill={props.color} textAnchor={props.anchor ?? "start"}>
       {props.children}
@@ -356,7 +356,7 @@ const stats: Renderer = (v, p, top) => {
 };
 
 // ───────────────────────── Колонка с шапкой (сравнение, иерархия) ─────────────────────────
-function columnBody(p: Paint, it: Item, w: number) {
+export function columnBody(p: Paint, it: Item, w: number) {
   const tw = w - 40;
   const value = p.fit(it.value, tw, 20, 1, 800, 15);
   const text = p.fit(it.text, tw, 14, 3, 400, 12);
@@ -374,7 +374,7 @@ function columnBody(p: Paint, it: Item, w: number) {
   return { value, valueY, text, textY, kids, h: y + 12 };
 }
 
-function columnCard(p: Paint, it: Item, i: number, x: number, y: number, w: number, headH: number, bodyH: number, compact = false) {
+export function columnCard(p: Paint, it: Item, i: number, x: number, y: number, w: number, headH: number, bodyH: number, compact = false) {
   const c = p.color(i);
   const head = p.spec("accent", c);
   const card = p.spec("card", c);
@@ -428,7 +428,7 @@ const compare: Renderer = (v, p, top) => {
 };
 
 /** Центральный узел-«таблетка» с заголовком (иерархия, карта мыслей). */
-function rootPill(p: Paint, title: string, cx: number, y: number, maxW: number) {
+export function rootPill(p: Paint, title: string, cx: number, y: number, maxW: number) {
   const fit = p.fit(title, maxW - 60, 26, 2, p.titleWeight, 18);
   const h = Math.max(76, textHeight(fit) + 32);
   const w = Math.min(maxW, Math.max(260, 70 + max(fit.lines.map((l) => l.length * fit.size * 0.55))));
@@ -482,7 +482,7 @@ const hierarchy: Renderer = (v, p, top) => {
 };
 
 // ───────────────────────── Карточки ─────────────────────────
-function cardBlock(p: Paint, it: Item, w: number) {
+export function cardBlock(p: Paint, it: Item, w: number) {
   const value = p.fit(it.value, w - 120, 15, 1, 800, 12);
   const label = p.fit(it.label, w - 120, 20, 2, p.labelWeight, 15);
   const text = p.fit(it.text, w - 52, 15, 3, 400, 12);
@@ -492,7 +492,7 @@ function cardBlock(p: Paint, it: Item, w: number) {
   return { value, label, text, kids, headH, h: 22 + headH + 8 + textHeight(text) + (kids.length ? 8 + kidsH : 0) + 26 };
 }
 
-function drawCard(p: Paint, it: Item, i: number, x: number, y: number, w: number, h: number, b: ReturnType<typeof cardBlock>) {
+export function drawCard(p: Paint, it: Item, i: number, x: number, y: number, w: number, h: number, b: ReturnType<typeof cardBlock>) {
   const c = p.color(i);
   const card = p.spec("card", c);
   const chip = p.spec("chip", c);
@@ -635,7 +635,4 @@ const mindmap: Renderer = (v, p, top) => {
   };
 };
 
-export const RENDERERS: Record<Layout, Renderer> = { steps, cycle, timeline, funnel, stats, compare, hierarchy, cards, pyramid, matrix, mindmap };
-
-/** Раскладки, где заголовок встроен в саму схему. */
-export const NO_HEADER: Layout[] = ["hierarchy", "mindmap"];
+export const CLASSIC = { steps, cycle, timeline, funnel, stats, compare, hierarchy, cards, pyramid, matrix, mindmap };
