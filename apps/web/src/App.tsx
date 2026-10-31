@@ -9,7 +9,8 @@ import { Paint, DEFAULT_LOOK, type Look } from "./render/paint";
 import { iconExists } from "./render/primitives";
 import { copyPng, download, slug, svgToPng, svgToString } from "./render/export";
 import { ItemEditor, Popover, TitleEditor } from "./Editor";
-import { LookPanel } from "./LookPanel";
+import { Sidebar, type SideTab } from "./Sidebar";
+import { initialUiTheme } from "./uiTheme";
 import { Help, HELP_TABS, type HelpTab } from "./Help";
 
 const SAMPLE = `Как запустить свой продукт с нуля.
@@ -74,6 +75,15 @@ export function App() {
     models: a.models ?? {},
   }));
   const [aiOpen, setAiOpen] = useState(false);
+  const [sideTab, setSideTab] = useLocal<SideTab>("nf.sideTab", "shape");
+  const [leftCollapsed, setLeftCollapsed] = useLocal("nf.leftCollapsed", false);
+  const [editorSize, setEditorSize] = useLocal("nf.editorSize", 14);
+  // на узком экране боковая панель выезжает поверх по кнопке
+  const [sideOpen, setSideOpen] = useState(false);
+  const [uiTheme, setUiTheme] = useLocal<"light" | "dark">("nf.uiTheme", initialUiTheme());
+  useEffect(() => {
+    document.documentElement.dataset.theme = uiTheme;
+  }, [uiTheme]);
   const [providerList, setProviderList] = useState<ProviderInfo[]>([]);
   // заголовки для API выставляем сразу при рендере, чтобы первый же запрос ушёл в выбранный сервис
   setAiSettings(ai);
@@ -157,12 +167,18 @@ export function App() {
     updateVisual((v) => ({ ...v, items: v.items.map((it, j) => (j === i ? { ...it, ...patch } : it)) }));
 
   /** Палитра перекрашивает всю схему: свои цвета пунктов сбрасываются, иначе они «прибиты» и не меняются. */
+  /**
+   * Палитра общая для всех схем, поэтому при её выборе сбрасываем свои цвета пунктов везде —
+   * и в открытой схеме, и в «Истории». Иначе, открыв другую схему, снова видишь «прибитый» цвет.
+   */
   function applyPalette(id: string) {
     setThemeId(id);
-    if (current?.visual.items.some((it) => it.color)) {
-      updateVisual((v) => ({ ...v, items: v.items.map(({ color: _c, ...it }) => it) }));
-      setToast("Свои цвета пунктов сброшены — вся схема в новой палитре");
-    }
+    const strip = (d: Doc): Doc =>
+      d.visual.items.some((it) => it.color) ? { ...d, visual: { ...d.visual, items: d.visual.items.map(({ color: _c, ...it }) => it) } } : d;
+    const hadOwn = history.some((d) => d.visual.items.some((it) => it.color)) || !!current?.visual.items.some((it) => it.color);
+    setCurrent((c) => (c ? strip(c) : c));
+    setHistory((h) => h.map(strip));
+    if (hadOwn) setToast("Свои цвета пунктов сброшены — схемы в новой палитре");
   }
 
   /** Окно правки у пункта на схеме (после перерисовки, когда пункт уже на новом месте). */
@@ -238,8 +254,9 @@ export function App() {
   }
 
   const recommended = current?.visual.layouts ?? [];
-  const ordered: Layout[] = [...recommended, ...LAYOUTS.filter((l) => !recommended.includes(l))];
   const paint = current ? new Paint(style, theme, current.visual, look) : null;
+  const shownLayout = current?.layout ?? "steps";
+  const shownStyle = style;
 
   return (
     <div className="app">
@@ -264,30 +281,65 @@ export function App() {
             </button>
           ))}
         </nav>
+        <button
+          className="theme-btn"
+          onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
+          title={uiTheme === "dark" ? "Светлая тема" : "Тёмная тема"}
+          aria-label="Переключить тему"
+        >
+          {uiTheme === "dark" ? "☀️" : "🌙"}
+        </button>
         <div className={`status ${status?.ok ? "ok" : "bad"}`} title={status?.error ?? `${status?.baseUrl} · иконки: ${status?.icons.status}`}>
           <span className="dot" />
           {status === null ? "проверка…" : status.ok ? `${status.model} · иконки: ${status.icons.semantic ? "по смыслу" : "по словам"}` : "нет связи с нейросетью"}
         </div>
       </header>
 
-      <main className="split">
-        <section className="pane editor">
-          <textarea
-            ref={textRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) run();
-            }}
-            placeholder="Вставьте текст, выделите фрагмент и нажмите «Визуализировать»"
-            spellCheck={false}
-          />
-          <div className="editor-bar">
-            <span className="hint">{selected ? `Выделено: ${selected.length} симв.` : "Выделите фрагмент или визуализируйте весь текст"} · Ctrl+Enter</span>
-            <button className="primary" onClick={() => run()} disabled={!!loading || !source || !status?.ok}>
-              {loading === "new" ? "Думаю…" : selected ? "⚡ Визуализировать выделенное" : "⚡ Визуализировать всё"}
+      <main className={`workspace ${leftCollapsed ? "left-collapsed" : ""} ${sideOpen ? "side-open" : ""} ${current ? "" : "no-side"}`}>
+        {leftCollapsed ? (
+          <section className="pane editor collapsed">
+            <button className="icon-btn" onClick={() => setLeftCollapsed(false)} title="Показать текст">
+              ⟩
             </button>
-          </div>
+            <button className="primary run-mini" onClick={() => run()} disabled={!!loading || !source || !status?.ok} title="Визуализировать (Ctrl+Enter)">
+              {loading === "new" ? "…" : "⚡"}
+            </button>
+            <span className="vertical-label">Текст</span>
+          </section>
+        ) : (
+          <section className="pane editor">
+            <div className="editor-head">
+              <span>Текст</span>
+              <div className="editor-tools">
+                <button className="icon-btn" onClick={() => setEditorSize((v) => Math.max(11, v - 1))} disabled={editorSize <= 11} title="Мельче">
+                  A−
+                </button>
+                <span className="muted small">{editorSize}</span>
+                <button className="icon-btn" onClick={() => setEditorSize((v) => Math.min(20, v + 1))} disabled={editorSize >= 20} title="Крупнее">
+                  A+
+                </button>
+                <button className="icon-btn" onClick={() => setLeftCollapsed(true)} title="Свернуть панель — больше места для схемы">
+                  ⟨
+                </button>
+              </div>
+            </div>
+            <textarea
+              ref={textRef}
+              value={text}
+              style={{ fontSize: editorSize }}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) run();
+              }}
+              placeholder="Вставьте текст, выделите фрагмент и нажмите «Визуализировать»"
+              spellCheck={false}
+            />
+            <div className="editor-bar">
+              <span className="hint">{selected ? `Выделено: ${selected.length} симв.` : "Выделите фрагмент или визуализируйте весь текст"} · Ctrl+Enter</span>
+              <button className="primary" onClick={() => run()} disabled={!!loading || !source || !status?.ok}>
+                {loading === "new" ? "Думаю…" : selected ? "⚡ Визуализировать выделенное" : "⚡ Визуализировать всё"}
+              </button>
+            </div>
           {history.length > 0 && (
             <div className="history">
               <div className="history-head">
@@ -311,7 +363,8 @@ export function App() {
               ))}
             </div>
           )}
-        </section>
+          </section>
+        )}
 
         <section className="pane canvas">
           {status && !status.ok && (
@@ -349,39 +402,10 @@ export function App() {
           )}
           {current && paint && (
             <>
-              <div className="styles-row">
-                {STYLES.map((s) => (
-                  <button key={s.id} className={`style-card ${s.id === style.id ? "active" : ""}`} onClick={() => setStyleId(s.id)} title={s.hint}>
-                    <div className="style-thumb">
-                      <VisualSvg visual={current.visual} layout={current.layout} theme={theme} style={s} look={look} className="svg-thumb" />
-                    </div>
-                    <span>{s.name}</span>
-                  </button>
-                ))}
-              </div>
-
-              <LookPanel
-                look={look}
-                onChange={setLook}
-                style={style}
-                autoColor={paint.base.text}
-                colorIgnored={!!look.color && !paint.textColorApplied}
-                autoBg={new Paint(style, theme, current.visual, { ...look, bg: undefined }).base.bg}
-              />
-
               <div className="toolbar">
-                <div className="themes" title={style.fixedTheme ? "У этого стиля своя палитра" : "Палитра"}>
-                  {THEMES.map((t) => (
-                    <button
-                      key={t.id}
-                      className={`swatch ${t.id === theme.id ? "active" : ""}`}
-                      title={t.name}
-                      disabled={!!style.fixedTheme}
-                      style={{ background: `linear-gradient(135deg, ${t.palette[0]} 0 50%, ${t.palette[2]} 50% 100%)`, outlineColor: t.palette[0] }}
-                      onClick={() => applyPalette(t.id)}
-                    />
-                  ))}
-                </div>
+                <button className="side-toggle" onClick={() => setSideOpen(true)}>
+                  ☰ Форма и стиль
+                </button>
                 <div className="actions">
                   {lastMs !== null && <span className="muted small">{(lastMs / 1000).toFixed(1)} с</span>}
                   <button onClick={() => run(true)} disabled={!!loading} title="Тот же текст — другая подача">
@@ -437,9 +461,8 @@ export function App() {
                   </div>
                 </div>
               </div>
-
               <div className="preview" ref={previewRef} onClick={onPreviewClick}>
-                <VisualSvg ref={svgRef} visual={current.visual} layout={current.layout} theme={theme} style={style} look={look} className="svg-main" />
+                <VisualSvg ref={svgRef} visual={current.visual} layout={shownLayout} theme={theme} style={shownStyle} look={look} className="svg-main" />
                 {pop?.kind === "item" && current.visual.items[pop.index] && (
                   <Popover x={pop.x} y={pop.y} onClose={() => setPop(null)}>
                     <ItemEditor
@@ -468,29 +491,36 @@ export function App() {
               </div>
               <div className="hint center">Кликните по пункту или заголовку на схеме, чтобы поменять текст, иконку или цвет</div>
 
-              <div className="variants">
-                {ordered.map((l) => (
-                  <button
-                    key={l}
-                    className={`variant ${l === current.layout ? "active" : ""}`}
-                    onClick={() => {
-                      update({ layout: l });
-                      setPop(null);
-                    }}
-                  >
-                    <div className="thumb">
-                      <VisualSvg visual={current.visual} layout={l} theme={theme} style={style} look={look} className="svg-thumb" />
-                    </div>
-                    <span>
-                      {recommended.includes(l) && <b className="star">★ </b>}
-                      {LAYOUT_LABELS[l]}
-                    </span>
-                  </button>
-                ))}
-              </div>
             </>
           )}
         </section>
+
+        {current && paint && (
+          <Sidebar
+            tab={sideTab}
+            onTab={setSideTab}
+            visual={current.visual}
+            layout={current.layout}
+            recommended={recommended}
+            theme={theme}
+            style={style}
+            look={look}
+            onLayout={(l) => {
+              update({ layout: l });
+              setPop(null);
+              setSideOpen(false);
+            }}
+            onStyle={(id) => setStyleId(id)}
+            onPalette={applyPalette}
+            onLook={setLook}
+            lookExtra={{
+              autoColor: paint.base.text,
+              colorIgnored: !!look.color && !paint.textColorApplied,
+              autoBg: new Paint(style, theme, current.visual, { ...look, bg: undefined }).base.bg,
+            }}
+          />
+        )}
+        {sideOpen && <div className="side-backdrop" onClick={() => setSideOpen(false)} />}
       </main>
       {toast && <div className="toast">{toast}</div>}
       {help && <Help tab={help} onTab={setHelp} onClose={() => setHelp(null)} />}
