@@ -7,13 +7,13 @@ import type { Paint, Spec } from "./paint";
 import { INNER, PAD, W, Small, accentText, cellX, grid, max, type Renderer } from "./layouts";
 
 /** Заливка центрального узла: как у иерархии и карты мыслей. */
-function rootSpec(p: Paint): Spec {
+export function rootSpec(p: Paint): Spec {
   const base = p.spec("accent", p.sketchy ? p.color(3) : p.style.accent === "soft" ? p.color(0) : p.base.title);
   return !p.sketchy && p.style.accent === "solid" ? { ...base, on: p.base.bg } : base;
 }
 
 /** Подложка цвета фона вокруг кружка на линии — линия уходит «под» узел. */
-const halo = (p: Paint, x: number, y: number, r: number) => <circle cx={x} cy={y} r={r} fill={p.t.bg} />;
+export const halo = (p: Paint, x: number, y: number, r: number) => <circle cx={x} cy={y} r={r} fill={p.t.bg} />;
 
 // ───────────────────────── Центр и лучи ─────────────────────────
 const hub: Renderer = (v, p, top) => {
@@ -498,7 +498,7 @@ function letterTiles(letters: string[], cols: number): Renderer {
 const swot = letterTiles(["S", "W", "O", "T"], 2);
 const pestel = letterTiles(["P", "E", "S", "T", "E", "L"], 3);
 
-export const MORE: Record<Exclude<Layout, "steps" | "cycle" | "timeline" | "funnel" | "stats" | "compare" | "hierarchy" | "cards" | "pyramid" | "matrix" | "mindmap">, Renderer> = {
+export const MORE: Record<"hub" | "stairs" | "roadmap" | "vtimeline" | "proscons" | "venn" | "target" | "swot" | "pestel", Renderer> = {
   hub,
   stairs,
   roadmap,
