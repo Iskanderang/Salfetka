@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { CHANNEL_URL, TelegramIcon } from "./ChannelTip";
 import { Ico } from "./render/primitives";
 
 export type HelpTab = "install" | "usage" | "extend" | "licenses";
@@ -321,6 +322,15 @@ function Usage() {
       </Step>
 
       <p className="note">Схемы хранятся в этом браузере. Очистка данных браузера удалит и их.</p>
+
+      <a className="author-box" href={CHANNEL_URL} target="_blank" rel="noreferrer">
+        <img src="/brand/channel.jpg" alt="" width={48} height={48} />
+        <span>
+          <b>Автор и обновления</b>
+          <span>Новые формы, стили и планы — в Telegram-канале t.me/ii_eggs. Там же можно предложить идею или сообщить об ошибке.</span>
+        </span>
+        <TelegramIcon size={22} />
+      </a>
     </>
   );
 }

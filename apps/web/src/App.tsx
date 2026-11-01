@@ -12,6 +12,7 @@ import { ItemEditor, Popover, TitleEditor } from "./Editor";
 import { Sidebar, type SideTab } from "./Sidebar";
 import { Logo } from "./Logo";
 import { RunTip } from "./RunTip";
+import { ChannelTip } from "./ChannelTip";
 import { Ico } from "./render/primitives";
 import { initialUiTheme } from "./uiTheme";
 import { Help, HELP_TABS, type HelpTab } from "./Help";
@@ -298,6 +299,7 @@ export function App() {
             </button>
           ))}
         </nav>
+        <ChannelTip />
         <button
           className="icon-btn theme-btn"
           onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
