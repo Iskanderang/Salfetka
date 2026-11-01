@@ -1,12 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Ico } from "./render/primitives";
 
 export type HelpTab = "install" | "usage" | "extend" | "licenses";
 
-export const HELP_TABS: { id: HelpTab; label: string }[] = [
-  { id: "install", label: "🚀 Установка" },
-  { id: "usage", label: "📖 Как пользоваться" },
-  { id: "extend", label: "🧩 Дополнения" },
-  { id: "licenses", label: "⚖️ Лицензии" },
+export const HELP_TABS: { id: HelpTab; label: string; icon: string }[] = [
+  { id: "install", label: "Установка", icon: "rocket" },
+  { id: "usage", label: "Как пользоваться", icon: "book-open" },
+  { id: "extend", label: "Дополнения", icon: "blocks" },
+  { id: "licenses", label: "Лицензии", icon: "scroll-text" },
 ];
 
 type Props = { tab: HelpTab; onTab: (t: HelpTab) => void; onClose: () => void };
@@ -26,12 +27,13 @@ export function Help({ tab, onTab, onClose }: Props) {
           <div className="modal-tabs">
             {HELP_TABS.map((t) => (
               <button key={t.id} className={t.id === tab ? "active" : ""} onClick={() => onTab(t.id)}>
+                <Ico name={t.icon} />
                 {t.label}
               </button>
             ))}
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Закрыть">
-            ✕
+            <Ico name="x" size={18} />
           </button>
         </div>
         <div className="modal-body">
@@ -42,6 +44,41 @@ export function Help({ tab, onTab, onClose }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Снимок экрана в справке: по клику открывается крупно. Если файла нет (например, снимки LM Studio ещё не сделаны) — не показывается. */
+function Shot({ src, alt, caption, narrow }: { src: string; alt: string; caption?: string; narrow?: boolean }) {
+  const [ok, setOk] = useState(true);
+  const [zoom, setZoom] = useState(false);
+  if (!ok) return null;
+  return (
+    <figure className={`shot ${narrow ? "narrow" : ""}`}>
+      <img src={`/help/${src}`} alt={alt} loading="lazy" onError={() => setOk(false)} onClick={() => setZoom(true)} title="Открыть крупно" />
+      {caption && <figcaption>{caption}</figcaption>}
+      {zoom && (
+        <div className="shot-zoom" onClick={() => setZoom(false)} role="dialog" aria-label={alt}>
+          <img src={`/help/${src}`} alt={alt} />
+          <span className="shot-zoom-hint">
+            <Ico name="x" size={14} />
+            Закрыть
+          </span>
+        </div>
+      )}
+    </figure>
+  );
+}
+
+/** Шаг инструкции: номер, заголовок, текст и снимки. */
+function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+  return (
+    <section className="step">
+      <div className="step-num">{n}</div>
+      <div className="step-body">
+        <h3>{title}</h3>
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -96,24 +133,44 @@ function Install() {
       </p>
 
       <h3>Шаги</h3>
-      <ol>
-        <li>
-          Установите <b>Node.js LTS</b> — <a href="https://nodejs.org" target="_blank" rel="noreferrer">nodejs.org</a>.
-        </li>
-        <li>
-          Установите <b>LM Studio</b> — <a href="https://lmstudio.ai" target="_blank" rel="noreferrer">lmstudio.ai</a>. Во вкладке поиска моделей скачайте модель из таблицы и{" "}
-          <code>nomic-embed-text-v1.5</code>.
-        </li>
-        <li>
-          В LM Studio на вкладке <b>Developer</b> нажмите <b>Start Server</b> (порт 1234). Если включена консольная утилита <code>lms</code>, start.bat сделает это сам.
-        </li>
-        <li>
-          Запустите <b>start.bat</b> в папке проекта. Он проверит Node.js и LM Studio, загрузит модели, при первом запуске поставит библиотеки (1–2 минуты) и откроет сайт.
-          <br />
-          Вручную: <code>npm install</code>, затем <code>npm run dev</code> и откройте <code>http://localhost:5173</code>.
-        </li>
-        <li>При самом первом запуске сервис ~20 секунд строит индекс иконок — дальше он берётся из кэша.</li>
-      </ol>
+      <Step n={1} title="Установите Node.js">
+        <p>
+          Скачайте версию <b>LTS</b> с <a href="https://nodejs.org" target="_blank" rel="noreferrer">nodejs.org</a> и установите с настройками по умолчанию.
+        </p>
+      </Step>
+      <Step n={2} title="Установите LM Studio и скачайте модели">
+        <p>
+          Скачайте программу с <a href="https://lmstudio.ai" target="_blank" rel="noreferrer">lmstudio.ai</a>. Откройте поиск моделей (значок лупы слева), найдите модель из
+          таблицы выше, например <code>gemma-4-12b</code>, и нажмите <b>Download</b>.
+        </p>
+        <Shot src="lm-1-search.png" alt="Поиск модели в LM Studio" caption="Поиск модели и кнопка Download" />
+        <p>
+          Так же найдите и скачайте <code>nomic-embed-text-v1.5</code> — маленькую модель для подбора иконок по смыслу.
+        </p>
+        <Shot src="lm-2-models.png" alt="Скачанные модели в LM Studio" caption="Обе модели в списке «Мои модели»" />
+      </Step>
+      <Step n={3} title="Включите сервер в LM Studio">
+        <p>
+          Откройте вкладку <b>Developer</b> (значок консоли слева) и включите переключатель <b>Status: Running</b>. Адрес сервера — <code>http://localhost:1234</code>. Если в
+          LM Studio включена консольная утилита <code>lms</code>, start.bat сделает это сам.
+        </p>
+        <Shot src="lm-3-server.png" alt="Запущенный сервер в LM Studio" caption="Сервер запущен — Status: Running" />
+      </Step>
+      <Step n={4} title="Запустите Салфетку">
+        <p>
+          Дважды щёлкните <b>start.bat</b> в папке проекта. Он проверит Node.js и LM Studio, загрузит модели, при первом запуске поставит библиотеки (1–2 минуты) и сам
+          откроет <code>http://localhost:5173</code>. Окно с логами не закрывайте — в нём работает сервис.
+        </p>
+        <p className="note">
+          Вручную: <code>npm install</code>, затем <code>npm run dev</code>. При самом первом запуске ~20 секунд строится индекс иконок — дальше он берётся из кэша.
+        </p>
+      </Step>
+      <Step n={5} title="Проверьте, что всё работает">
+        <p>
+          Справа в шапке должна гореть <b style={{ color: "var(--ok)" }}>зелёная точка</b> с названием модели и надписью «иконки: по смыслу». Красная — смотрите раздел
+          «Если что-то не так» ниже.
+        </p>
+      </Step>
 
       <h3>Другая модель</h3>
       <p>
@@ -147,9 +204,10 @@ function Install() {
           Скопируйте ключ — он начинается с <code>sk-or-v1-</code> — и сохраните его.
         </li>
         <li>
-          В Napkin Free нажмите <b>⚙ Нейросеть</b> → «Облако — OpenRouter», вставьте ключ и нажмите «Проверить ключ».
+          В Салфетке нажмите кнопку нейросети в шапке → «Облако — OpenRouter», вставьте ключ и нажмите «Проверить ключ».
         </li>
       </ol>
+      <Shot src="install-cloud.png" alt="Окно «Где работает нейросеть» в облачном режиме" caption="Окно нейросети: облачный режим с инструкцией и полем для ключа" />
       <p className="note">В облачном режиме тексты уходят в OpenRouter, у бесплатных моделей есть дневной лимит запросов, а иконки подбираются по словам.</p>
 
       <h3>Если что-то не так</h3>
@@ -170,31 +228,61 @@ function Usage() {
   return (
     <>
       <h2>Как пользоваться</h2>
-      <ol>
-        <li>Вставьте текст слева. Выделите кусок, который нужно превратить в схему, — или ничего не выделяйте, тогда возьмётся весь текст.</li>
-        <li>
-          Нажмите <b>⚡ Визуализировать</b> (или Ctrl+Enter). Модель предложит раскладки — лучшие отмечены ★.
-        </li>
-        <li>
-          Справа — панель с вкладками. <b>Форма</b>: сверху ★ формы, которые советует модель, ниже категории (Процесс, Хронология, Сравнение…) — раскройте
-          нужную. <b>Стиль</b>: шесть стилей и десять палитр. Клик по миниатюре — схема в центре сразу меняется. Модель
-          при этом не вызывается — всё мгновенно.
-        </li>
-        <li>
-          <b>Кликните по пункту</b> на схеме: поменяйте текст, иконку (8 подобранных по смыслу или поиск по-русски), цвет, порядок. Клик по заголовку — правка заголовка.
-        </li>
-        <li>
-          Вкладка <b>Аа Текст</b> — шрифт, размер, жирность и цвет текста, фон схемы. Для «Салфетки» и «Доски» — интенсивность маркера и мела. Панель с исходным
-          текстом слева можно свернуть кнопкой ⟨, а размер её текста поменять кнопками A− / A+.
-        </li>
-        <li>
-          <b>🔄 Ещё вариант</b> — тот же текст, но другая подача. <b>+ Пункт</b> — добавить пункт вручную.
-        </li>
-        <li>
-          <b>Скачать</b>: PNG — для документов и соцсетей, PNG без фона — для слайдов, SVG — для Figma, сайтов и печати. <b>Копировать</b> кладёт картинку в буфер.
-        </li>
-      </ol>
-      <p className="note">Все схемы хранятся в этом браузере, в списке «История». Очистка истории браузера удалит и их.</p>
+      <p className="lead">От текста до готовой картинки — шесть шагов. Нажмите на любой снимок, чтобы увеличить.</p>
+
+      <Step n={1} title="Вставьте текст и выделите фрагмент">
+        <p>
+          Вставьте текст в панель слева. Выделите мышью кусок, который нужно превратить в схему, — или ничего не выделяйте, тогда возьмётся весь текст. Размер шрифта
+          меняют кнопки A− / A+, а кнопка рядом сворачивает панель, чтобы схеме было больше места.
+        </p>
+        <Shot src="use-1-select.png" alt="Выделенный фрагмент текста" caption="Выделен фрагмент — кнопка внизу стала «Визуализировать выделенное»" />
+      </Step>
+
+      <Step n={2} title="Нажмите «Визуализировать»">
+        <p>
+          Или <b>Ctrl+Enter</b>. Модель прочитает текст, выберет форму и подберёт иконки — это 5–10 секунд на своей видеокарте. Пока она работает, видны этапы.
+        </p>
+        <Shot src="use-2-generating.png" alt="Этапы работы модели" />
+      </Step>
+
+      <Step n={3} title="Получите схему">
+        <p>
+          Схема появится в центре. Над ней — <b>Ещё вариант</b> (тот же текст, другая подача), <b>+ Пункт</b>, <b>Копировать</b> и <b>Скачать</b>. Все схемы
+          сохраняются в «Истории» слева.
+        </p>
+        <Shot src="use-3-result.png" alt="Готовая схема в редакторе" />
+      </Step>
+
+      <Step n={4} title="Выберите форму, стиль и оформление">
+        <p>
+          Справа три вкладки. <b>Форма</b> — сверху формы, которые советует модель, ниже 32 формы по категориям. <b>Стиль</b> — шесть стилей. <b>Аа Текст</b> — шрифт,
+          размер, жирность, цвет текста и фон. Над вкладками всегда видна палитра из десяти цветовых наборов. Всё меняется по клику, мгновенно, без нового запроса к
+          модели.
+        </p>
+        <div className="shot-row">
+          <Shot src="use-4-shape.png" alt="Вкладка «Форма»" caption="Форма" narrow />
+          <Shot src="use-5-style.png" alt="Вкладка «Стиль»" caption="Стиль" narrow />
+          <Shot src="use-6-text.png" alt="Вкладка «Аа Текст»" caption="Аа Текст" narrow />
+        </div>
+      </Step>
+
+      <Step n={5} title="Поправьте пункт прямо на схеме">
+        <p>
+          Кликните по пункту: поменяйте текст, число и подпункты, выберите одну из иконок, подобранных по смыслу, или найдите другую поиском по-русски, задайте цвет,
+          переставьте пункт или добавьте новый перед ним или после. Клик по заголовку схемы — правка заголовка.
+        </p>
+        <Shot src="use-7-item.png" alt="Окно правки пункта с поиском иконки" caption="Поиск «деньги» нашёл монеты, валюту и копилки" narrow />
+      </Step>
+
+      <Step n={6} title="Скачайте или скопируйте">
+        <p>
+          <b>PNG</b> — для документов, соцсетей и писем. <b>PNG без фона</b> — для слайдов PowerPoint, Keynote, Canva. <b>SVG</b> — вектор для Figma, сайтов и
+          печати. <b>Копировать</b> кладёт картинку в буфер: вставьте её через Ctrl+V куда угодно.
+        </p>
+        <Shot src="use-8-export.png" alt="Меню «Скачать»" narrow />
+      </Step>
+
+      <p className="note">Схемы хранятся в этом браузере. Очистка данных браузера удалит и их.</p>
     </>
   );
 }
@@ -279,7 +367,7 @@ function Licenses() {
           коммерческого использования проверьте условия выбранной модели.
         </li>
       </ul>
-      <p className="note">Napkin Free не связан с Napkin.ai — это самостоятельный проект с похожей идеей.</p>
+      <p className="note">Салфетка не связана с Napkin.ai — это самостоятельный проект с похожей идеей.</p>
     </>
   );
 }

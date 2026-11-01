@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Item } from "@napkin/shared";
 import { searchIcons } from "./api";
-import { LucideByName } from "./render/primitives";
+import { Ico, LucideByName } from "./render/primitives";
 
 type PopoverProps = { x: number; y: number; onClose: () => void; children: ReactNode; width?: number };
 
@@ -84,17 +84,18 @@ export function ItemEditor({ item, index, count, palette, autoColor, colorLocked
       <div className="pop-head">
         <b>Пункт {index + 1}</b>
         <div className="pop-head-actions">
-          <button className="icon-btn" title="Левее / выше" disabled={index === 0} onClick={() => onMoveTo(index - 1)}>
-            ←
+          <button className="icon-btn" title="Левее / выше" disabled={index === 0} onClick={() => onMoveTo(index - 1)} aria-label="Левее">
+            <Ico name="chevron-left" />
           </button>
-          <button className="icon-btn" title="Правее / ниже" disabled={index === count - 1} onClick={() => onMoveTo(index + 1)}>
-            →
+          <button className="icon-btn" title="Правее / ниже" disabled={index === count - 1} onClick={() => onMoveTo(index + 1)} aria-label="Правее">
+            <Ico name="chevron-right" />
           </button>
           <button className="icon-btn danger" title="Удалить пункт" disabled={count <= 2} onClick={onDelete}>
+            <Ico name="trash-2" />
             Удалить
           </button>
           <button className="icon-btn" title="Закрыть (Esc)" onClick={onClose}>
-            ✕
+            <Ico name="x" size={18} />
           </button>
         </div>
       </div>
@@ -173,7 +174,7 @@ export function ItemEditor({ item, index, count, palette, autoColor, colorLocked
           ))}
           <label className="color-custom" title="Свой цвет">
             <input type="color" value={current.slice(0, 7)} onChange={(e) => onChange({ color: e.target.value })} />
-            🎨
+            <Ico name="pipette" size={14} />
           </label>
           <button className="link" onClick={() => onChange({ color: undefined })} disabled={!item.color}>
             авто
@@ -190,7 +191,7 @@ export function TitleEditor({ title, onChange, onClose }: { title: string; onCha
       <div className="pop-head">
         <b>Заголовок</b>
         <button className="icon-btn" onClick={onClose}>
-          ✕
+          <Ico name="x" size={18} />
         </button>
       </div>
       <input value={title} onChange={(e) => onChange(e.target.value)} autoFocus onKeyDown={(e) => e.key === "Enter" && onClose()} />

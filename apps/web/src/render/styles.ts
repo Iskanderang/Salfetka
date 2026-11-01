@@ -66,7 +66,7 @@ export const STYLES: StyleDef[] = [
   },
   {
     id: "napkin",
-    name: "Салфетка",
+    name: "Набросок",
     hint: "От руки, маркер",
     font: HAND_FONT,
     textScale: 1.3,

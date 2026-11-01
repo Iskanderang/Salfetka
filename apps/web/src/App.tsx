@@ -10,6 +10,8 @@ import { iconExists } from "./render/primitives";
 import { copyPng, download, slug, svgToPng, svgToString } from "./render/export";
 import { ItemEditor, Popover, TitleEditor } from "./Editor";
 import { Sidebar, type SideTab } from "./Sidebar";
+import { Logo } from "./Logo";
+import { Ico } from "./render/primitives";
 import { initialUiTheme } from "./uiTheme";
 import { Help, HELP_TABS, type HelpTab } from "./Help";
 
@@ -22,6 +24,9 @@ const SAMPLE = `Как запустить свой продукт с нуля.
 Офис против удалёнки. В офисе живое общение, чёткий режим и быстрые решения, но дорога съедает время. Удалёнка даёт гибкий график и экономию на дороге, но сложнее с коммуникацией и выгоранием.`;
 
 type Doc = { id: string; visual: Visual; layout: Layout; source: string; at: number };
+
+/** Этапы работы модели для экрана ожидания (реальный ответ приходит одним запросом — этапы идут по таймеру). */
+const STAGES = ["Читаю текст", "Выбираю форму", "Подбираю иконки", "Рисую схему"];
 type Pop = { kind: "item"; index: number; x: number; y: number } | { kind: "title"; x: number; y: number } | null;
 
 function useLocal<T>(key: string, init: T, fix: (v: T) => T = (v) => v) {
@@ -80,6 +85,14 @@ export function App() {
   const [editorSize, setEditorSize] = useLocal("nf.editorSize", 14);
   // на узком экране боковая панель выезжает поверх по кнопке
   const [sideOpen, setSideOpen] = useState(false);
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    if (!loading) return setStage(0);
+    setStage(0);
+    // последний этап держим, пока модель не ответит
+    const id = setInterval(() => setStage((st) => Math.min(STAGES.length - 1, st + 1)), 1500);
+    return () => clearInterval(id);
+  }, [loading]);
   const [uiTheme, setUiTheme] = useLocal<"light" | "dark">("nf.uiTheme", initialUiTheme());
   useEffect(() => {
     document.documentElement.dataset.theme = uiTheme;
@@ -262,7 +275,8 @@ export function App() {
     <div className="app">
       <header className="top">
         <div className="logo">
-          <span className="logo-mark">⚡</span> Napkin Free
+          <Logo size={60} />
+          <span className="wordmark">Салфетка</span>
         </div>
         <button
           className={`ai-btn ${ai.provider === "local" ? "" : "cloud"}`}
@@ -272,22 +286,24 @@ export function App() {
           }}
           title="Где работает нейросеть"
         >
-          ⚙ {ai.provider === "local" ? "💻 Своя видеокарта" : "☁️ OpenRouter"}
+          <Ico name={ai.provider === "local" ? "cpu" : "cloud"} />
+          {ai.provider === "local" ? "Своя видеокарта" : "OpenRouter"}
         </button>
         <nav className="help-nav">
           {HELP_TABS.map((t) => (
             <button key={t.id} className="help-btn" onClick={() => setHelp(t.id)}>
+              <Ico name={t.icon} />
               {t.label}
             </button>
           ))}
         </nav>
         <button
-          className="theme-btn"
+          className="icon-btn theme-btn"
           onClick={() => setUiTheme((t) => (t === "dark" ? "light" : "dark"))}
           title={uiTheme === "dark" ? "Светлая тема" : "Тёмная тема"}
           aria-label="Переключить тему"
         >
-          {uiTheme === "dark" ? "☀️" : "🌙"}
+          <Ico name={uiTheme === "dark" ? "sun" : "moon"} size={18} />
         </button>
         <div className={`status ${status?.ok ? "ok" : "bad"}`} title={status?.error ?? `${status?.baseUrl} · иконки: ${status?.icons.status}`}>
           <span className="dot" />
@@ -299,10 +315,10 @@ export function App() {
         {leftCollapsed ? (
           <section className="pane editor collapsed">
             <button className="icon-btn" onClick={() => setLeftCollapsed(false)} title="Показать текст">
-              ⟩
+              <Ico name="panel-left-open" size={18} />
             </button>
             <button className="primary run-mini" onClick={() => run()} disabled={!!loading || !source || !status?.ok} title="Визуализировать (Ctrl+Enter)">
-              {loading === "new" ? "…" : "⚡"}
+              {loading === "new" ? <span className="spinner small" /> : <Ico name="sparkles" size={18} />}
             </button>
             <span className="vertical-label">Текст</span>
           </section>
@@ -319,7 +335,7 @@ export function App() {
                   A+
                 </button>
                 <button className="icon-btn" onClick={() => setLeftCollapsed(true)} title="Свернуть панель — больше места для схемы">
-                  ⟨
+                  <Ico name="panel-left-close" size={18} />
                 </button>
               </div>
             </div>
@@ -337,7 +353,8 @@ export function App() {
             <div className="editor-bar">
               <span className="hint">{selected ? `Выделено: ${selected.length} симв.` : "Выделите фрагмент или визуализируйте весь текст"} · Ctrl+Enter</span>
               <button className="primary" onClick={() => run()} disabled={!!loading || !source || !status?.ok}>
-                {loading === "new" ? "Думаю…" : selected ? "⚡ Визуализировать выделенное" : "⚡ Визуализировать всё"}
+                {loading === "new" ? <span className="spinner small" /> : <Ico name="sparkles" />}
+                {loading === "new" ? "Создаю схему…" : selected ? "Визуализировать выделенное" : "Визуализировать всё"}
               </button>
             </div>
           {history.length > 0 && (
@@ -369,7 +386,9 @@ export function App() {
         <section className="pane canvas">
           {status && !status.ok && (
             <div className="error">
-              ⚠ Нейросеть не отвечает: {status.error}{" "}
+              <Ico name="circle-alert" size={18} />
+              <span>
+              Нейросеть не отвечает: {status.error}{" "}
               {status.provider === "local" ? (
                 <>
                   <button className="link" onClick={() => setHelp("install")}>
@@ -385,31 +404,47 @@ export function App() {
                   Открыть настройки нейросети →
                 </button>
               )}
+              </span>
             </div>
           )}
-          {error && <div className="error">⚠ {error}</div>}
+          {error && (
+            <div className="error">
+              <Ico name="circle-alert" size={18} />
+              <span>{error}</span>
+            </div>
+          )}
           {!current && !loading && (
             <div className="empty">
-              <div className="empty-icon">🗒️ → 📊</div>
-              <p>Выделите кусок текста слева и нажмите «Визуализировать».</p>
-              <p className="muted">Модель подберёт раскладки и иконки по смыслу, а вы выберете стиль.</p>
+              <Logo size={150} />
+              <h2>Превратите текст в схему</h2>
+              <p className="muted">Выделите фрагмент слева и нажмите «Визуализировать». Модель подберёт форму и иконки по смыслу, а вы выберете стиль.</p>
             </div>
           )}
           {loading && (
             <div className="loading">
-              <div className="spinner" /> {loading === "variant" ? "Ищу другой взгляд на тот же текст…" : "Модель раскладывает текст по полочкам…"}
+              <div className="spinner" />
+              <div className="stages">
+                {STAGES.map((st, i) => (
+                  <span key={st} className={`stage ${i < stage ? "done" : i === stage ? "now" : ""}`}>
+                    {i < stage && <Ico name="check" size={12} />}
+                    {st}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
           {current && paint && (
             <>
               <div className="toolbar">
                 <button className="side-toggle" onClick={() => setSideOpen(true)}>
-                  ☰ Форма и стиль
+                  <Ico name="panel-right" />
+                  Форма и стиль
                 </button>
                 <div className="actions">
                   {lastMs !== null && <span className="muted small">{(lastMs / 1000).toFixed(1)} с</span>}
                   <button onClick={() => run(true)} disabled={!!loading} title="Тот же текст — другая подача">
-                    {loading === "variant" ? "…" : "🔄 Ещё вариант"}
+                    {loading === "variant" ? <span className="spinner small" /> : <Ico name="refresh-cw" />}
+                    Ещё вариант
                   </button>
                   <div className="menu-wrap">
                     <button
@@ -417,7 +452,9 @@ export function App() {
                         setPop(null);
                         setAddOpen((o) => !o);
                       }} disabled={current.visual.items.length >= 8} title={current.visual.items.length >= 8 ? "Максимум 8 пунктов" : "Добавить пункт в нужное место"}>
-                      + Пункт ▾
+                      <Ico name="plus" />
+                      Пункт
+                      <Ico name="chevron-down" size={14} />
                     </button>
                     {addOpen && (
                       <div className="menu add-menu" onMouseLeave={() => setAddOpen(false)}>
@@ -436,11 +473,14 @@ export function App() {
                     )}
                   </div>
                   <button onClick={() => exportAs("copy")} title="PNG в буфер обмена — вставьте Ctrl+V в чат, письмо или слайд">
+                    <Ico name="copy" />
                     Копировать
                   </button>
                   <div className="menu-wrap">
-                    <button className="primary-soft" onClick={() => setExportOpen((o) => !o)}>
-                      Скачать ▾
+                    <button className="primary sm" onClick={() => setExportOpen((o) => !o)}>
+                      <Ico name="download" />
+                      Скачать
+                      <Ico name="chevron-down" size={14} />
                     </button>
                     {exportOpen && (
                       <div className="menu" onMouseLeave={() => setExportOpen(false)}>

@@ -3,6 +3,7 @@ import { FONTS, fontById, loadFont } from "./render/fonts";
 import { clearTextCache } from "./render/text";
 import { DEFAULT_LOOK, type Look } from "./render/paint";
 import type { StyleDef } from "./render/styles";
+import { Ico } from "./render/primitives";
 
 type Props = { look: Look; onChange: (look: Look) => void; style: StyleDef; autoColor: string; colorIgnored: boolean; autoBg: string };
 
@@ -110,7 +111,7 @@ export function LookPanel({ look, onChange, style, autoColor, colorIgnored, auto
           ))}
           <label className="bg-dot custom" title="Свой цвет фона">
             <input type="color" value={(look.bg ?? autoBg).slice(0, 7)} onChange={(e) => set({ bg: e.target.value })} />
-            🎨
+            <Ico name="pipette" size={14} />
           </label>
         </div>
       </div>

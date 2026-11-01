@@ -6,6 +6,7 @@ import { STYLES, type StyleDef } from "./render/styles";
 import type { Look } from "./render/paint";
 import { LookPanel } from "./LookPanel";
 import { categoryOf, visibleCategories } from "./catalog";
+import { Ico } from "./render/primitives";
 
 export type SideTab = "shape" | "style" | "text";
 
@@ -49,7 +50,7 @@ export function Sidebar(p: Props) {
         <VisualSvg visual={p.visual} layout={l} theme={p.theme} style={p.style} look={p.look} className="svg-thumb" />
       </div>
       <span>
-        {p.recommended.includes(l) && <b className="star">★ </b>}
+        {p.recommended.includes(l) && <span className="star" title="Советует модель"><Ico name="star" size={13} /></span>}
         {LAYOUT_LABELS[l]}
       </span>
     </button>
@@ -88,7 +89,7 @@ export function Sidebar(p: Props) {
             {p.recommended.length > 0 && (
               <section className="side-section">
                 <div className="side-head">
-                  <span className="star">★</span> Советует модель
+                  <span className="star"><Ico name="sparkles" size={14} /></span> Советует модель
                 </div>
                 <div className="shape-grid">{p.recommended.map((l) => thumb(l, `rec-${l}`))}</div>
               </section>
@@ -98,11 +99,11 @@ export function Sidebar(p: Props) {
               return (
                 <section key={c.id} className={`cat ${open ? "open" : ""}`}>
                   <button className="cat-head" onClick={() => setOpenCat(open ? "" : c.id)} aria-expanded={open}>
-                    <span className="cat-icon">{c.icon}</span>
+                    <span className="cat-icon"><Ico name={c.icon} size={18} /></span>
                     <span className="cat-name">{c.name}</span>
                     {c.layouts.includes(p.layout) && <span className="cat-dot" title="Здесь выбранная форма" />}
                     <span className="cat-count">{c.layouts.length}</span>
-                    <span className="cat-chevron">{open ? "▾" : "▸"}</span>
+                    <span className="cat-chevron"><Ico name="chevron-right" size={16} /></span>
                   </button>
                   {open && <div className="shape-grid">{c.layouts.map((l) => thumb(l, `${c.id}-${l}`))}</div>}
                 </section>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { AiSettings, ProviderId, ProviderInfo } from "@napkin/shared";
 import { models as fetchModels } from "./api";
+import { Ico } from "./render/primitives";
 
 type Props = {
   settings: AiSettings;
@@ -60,20 +61,20 @@ export function AiDialog({ settings, providers, onChange, onClose, onInstallHelp
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-label="Настройки нейросети">
         <div className="modal-head">
-          <b className="modal-title">⚙ Где работает нейросеть</b>
+          <b className="modal-title"><Ico name="settings-2" size={20} />Где работает нейросеть</b>
           <button className="icon-btn" onClick={onClose} aria-label="Закрыть">
-            ✕
+            <Ico name="x" size={18} />
           </button>
         </div>
         <div className="modal-body">
           <div className="mode-switch">
             <button className={!isCloud ? "active" : ""} onClick={() => pick("local")}>
-              <span className="mode-icon">💻</span>
+              <span className="mode-icon"><Ico name="cpu" size={24} /></span>
               <b>Своя видеокарта</b>
               <small>LM Studio на этом компьютере. Бесплатно, без лимитов, тексты никуда не уходят.</small>
             </button>
             <button className={isCloud ? "active" : ""} onClick={() => !isCloud && pick("openrouter")}>
-              <span className="mode-icon">☁️</span>
+              <span className="mode-icon"><Ico name="cloud" size={24} /></span>
               <b>Облако — OpenRouter</b>
               <small>Если видеокарты нет или не хочется её нагружать. Нужен бесплатный ключ OpenRouter.</small>
             </button>
@@ -115,7 +116,7 @@ export function AiDialog({ settings, providers, onChange, onClose, onInstallHelp
                 <li>Сохраните его у себя и вставьте в поле ниже, затем нажмите «Проверить ключ».</li>
               </ol>
 
-              <div className="privacy">🔒 {current?.privacy ?? "Тексты уходят в OpenRouter и к выбранному поставщику модели."}</div>
+              <div className="privacy"><Ico name="lock" />{current?.privacy ?? "Тексты уходят в OpenRouter и к выбранному поставщику модели."}</div>
 
               <h3>Ключ OpenRouter</h3>
               <div className="key-row">
@@ -128,7 +129,7 @@ export function AiDialog({ settings, providers, onChange, onClose, onInstallHelp
                   spellCheck={false}
                 />
                 <button onClick={() => setShowKey((v) => !v)} title={showKey ? "Скрыть" : "Показать"}>
-                  {showKey ? "🙈" : "👁"}
+                  <Ico name={showKey ? "eye-off" : "eye"} />
                 </button>
                 <button className="primary" onClick={runCheck} disabled={!key || check.state === "busy"}>
                   {check.state === "busy" ? "Проверяю…" : "Проверить ключ"}
@@ -161,7 +162,7 @@ export function AiDialog({ settings, providers, onChange, onClose, onInstallHelp
                 </div>
               )}
               <p className="note">
-                Ключ хранится только в этом браузере и передаётся вашему локальному серверу Napkin Free, а он — в OpenRouter. Список бесплатных моделей и лимиты у
+                Ключ хранится только в этом браузере и передаётся вашему локальному серверу Салфетки, а он — в OpenRouter. Список бесплатных моделей и лимиты у
                 OpenRouter меняются: если что-то перестало работать, нажмите «Проверить ключ» и выберите другую модель «:free». Иконки в облачном режиме подбираются по
                 словам.
               </p>

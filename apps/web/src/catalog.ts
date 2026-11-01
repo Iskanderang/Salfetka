@@ -4,19 +4,20 @@ import { LAYOUTS, type Layout } from "@napkin/shared";
  * Категории форм для боковой панели. Одна форма может быть в нескольких категориях;
  * пустые категории не показываются — новые формы просто дописываются в нужные списки.
  */
+/** icon — имя линейной иконки Lucide */
 export type Category = { id: string; name: string; icon: string; layouts: Layout[] };
 
 export const CATEGORIES: Category[] = [
-  { id: "process", name: "Процесс", icon: "➜", layouts: ["steps", "stairs", "flowchart", "cycle", "bridge"] },
-  { id: "timeline", name: "Хронология", icon: "⏱", layouts: ["timeline", "vtimeline", "roadmap"] },
-  { id: "compare", name: "Сравнение", icon: "⚖", layouts: ["compare", "proscons", "venn", "scales", "diamond"] },
-  { id: "data", name: "Данные", icon: "📊", layouts: ["stats", "gauge", "funnel"] },
-  { id: "hierarchy", name: "Иерархия", icon: "🔺", layouts: ["hierarchy", "pyramid", "target"] },
-  { id: "parts", name: "Части целого", icon: "🧩", layouts: ["hub", "cards", "iceberg"] },
-  { id: "ideas", name: "Идеи и рассказ", icon: "💡", layouts: ["mindmap", "dialogue"] },
-  { id: "causes", name: "Причины и решения", icon: "🔎", layouts: ["fishbone", "decisions"] },
-  { id: "frameworks", name: "Бизнес-фреймворки", icon: "💼", layouts: ["swot", "pestel", "matrix"] },
-  { id: "metaphors", name: "Визуальные метафоры", icon: "🎭", layouts: ["mountains", "temple", "podium"] },
+  { id: "process", name: "Процесс", icon: "workflow", layouts: ["steps", "stairs", "flowchart", "cycle", "bridge"] },
+  { id: "timeline", name: "Хронология", icon: "clock", layouts: ["timeline", "vtimeline", "roadmap"] },
+  { id: "compare", name: "Сравнение", icon: "scale", layouts: ["compare", "proscons", "venn", "scales", "diamond"] },
+  { id: "data", name: "Данные", icon: "chart-column", layouts: ["stats", "gauge", "funnel"] },
+  { id: "hierarchy", name: "Иерархия", icon: "network", layouts: ["hierarchy", "pyramid", "target"] },
+  { id: "parts", name: "Части целого", icon: "puzzle", layouts: ["hub", "cards", "iceberg"] },
+  { id: "ideas", name: "Идеи и рассказ", icon: "lightbulb", layouts: ["mindmap", "dialogue"] },
+  { id: "causes", name: "Причины и решения", icon: "search", layouts: ["fishbone", "decisions"] },
+  { id: "frameworks", name: "Бизнес-фреймворки", icon: "briefcase", layouts: ["swot", "pestel", "matrix"] },
+  { id: "metaphors", name: "Визуальные метафоры", icon: "mountain-snow", layouts: ["mountains", "temple", "podium"] },
 ];
 
 // каждая форма — ровно в одной категории; если нарушено, предупреждаем при разработке

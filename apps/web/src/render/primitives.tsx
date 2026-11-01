@@ -51,3 +51,9 @@ export function LucideByName({ name, size = 20, color, strokeWidth = 2 }: { name
   const Cmp: LucideIcon = (icons as Record<string, LucideIcon>)[toPascal(name)] ?? icons.Sparkles;
   return <Cmp size={size} color={color} strokeWidth={strokeWidth} />;
 }
+
+/** Иконка интерфейса: линейная Lucide, толщина 1.75 по дизайн-системе. */
+export function Ico({ name, size = 16, className }: { name: string; size?: number; className?: string }) {
+  const Cmp: LucideIcon = (icons as Record<string, LucideIcon>)[toPascal(name)] ?? icons.Circle;
+  return <Cmp size={size} strokeWidth={1.75} className={`ui-ico ${className ?? ""}`} aria-hidden="true" />;
+}
