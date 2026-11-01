@@ -173,7 +173,10 @@ input[type="range"], input[type="color"] { border: none; box-shadow: none; paddi
 /* знак: белый фон картинки сливается с белой шапкой; в тёмной теме — белая скруглённая плашка */
 .brand-mark { display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .brand-mark img { display: block; height: 100%; width: auto; user-select: none; }
-[data-theme="dark"] .brand-mark { background: #ffffff; border-radius: 14px; padding: 4px 8px; box-sizing: content-box; }
+/* светлый знак — в светлой теме, тёмный (прозрачный фон) — в тёмной */
+.brand-mark .brand-dark { display: none; }
+[data-theme="dark"] .brand-mark .brand-light { display: none; }
+[data-theme="dark"] .brand-mark .brand-dark { display: block; }
 .ai-btn { margin-left: 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
 .ai-btn.cloud { background: var(--accent-soft); border-color: var(--accent-soft-2); color: var(--accent-strong); }
 .help-nav { display: flex; gap: 2px; margin-right: auto; margin-left: 4px; flex-wrap: nowrap; overflow: hidden; }

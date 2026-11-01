@@ -4,17 +4,18 @@ import { Text } from "./primitives";
 import { textHeight, type Fitted } from "./text";
 import { tint } from "./themes";
 import type { Paint } from "./paint";
-import { INNER, PAD, W, Small, accentText, max, type Renderer } from "./layouts";
+import { INNER, PAD, W, Small, accentText, max, valueText, type Renderer } from "./layouts";
+export { valueText };
 import { halo, rootSpec } from "./layoutsMore";
 
 /** Блок «подпись + пояснение» заданной ширины. */
-function labelBlock(p: Paint, it: Item, w: number, size = 17, lines = 3) {
+export function labelBlock(p: Paint, it: Item, w: number, size = 17, lines = 3) {
   const label = p.fit(it.label, w, size, 2, p.labelWeight, 12);
-  const text = p.fit([it.value, it.text].filter(Boolean).join(" · "), w, 13, lines, 400, 11);
+  const text = p.fit(valueText(it), w, 13, lines, 400, 11);
   return { label, text, h: textHeight(label) + (text.lines.length ? textHeight(text) + 3 : 0) };
 }
 
-function drawLabel(p: Paint, b: ReturnType<typeof labelBlock>, x: number, y: number, anchor: "start" | "middle" | "end", color = p.t.text, muted = p.t.muted) {
+export function drawLabel(p: Paint, b: ReturnType<typeof labelBlock>, x: number, y: number, anchor: "start" | "middle" | "end", color = p.t.text, muted = p.t.muted) {
   return (
     <>
       <Text fit={b.label} x={x} y={y} anchor={anchor} color={color} weight={p.labelWeight} />
@@ -24,7 +25,7 @@ function drawLabel(p: Paint, b: ReturnType<typeof labelBlock>, x: number, y: num
 }
 
 /** Стрелка-наконечник в точке (x, y), направленная по углу a. */
-function arrowHead(p: Paint, x: number, y: number, a: number, color: string, size = 10, key?: string) {
+export function arrowHead(p: Paint, x: number, y: number, a: number, color: string, size = 10, key?: string) {
   const pt = (dx: number, dy: number): [number, number] => [x + dx * Math.cos(a) - dy * Math.sin(a), y + dx * Math.sin(a) + dy * Math.cos(a)];
   return <g key={key}>{p.poly([pt(0, 0), pt(-size, -size * 0.6), pt(-size, size * 0.6)], { fill: color, stroke: p.sketchy ? color : "none", sw: 1, on: "", onMuted: "", icon: "" })}</g>;
 }

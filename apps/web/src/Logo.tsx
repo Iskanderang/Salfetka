@@ -1,14 +1,15 @@
 /**
  * Знак «Салфетки»: айсберг из сложенной бумажной салфетки (растровый оригинал из бренд-листа).
- * Фон у картинки белый — светлая бумага айсберга неотличима от фона, прозрачность её портит.
- * Поэтому в тёмной теме знак стоит на белой скруглённой плашке, как вариант «иконка приложения».
+ * Две версии: светлая — на белом фоне, тёмная — с прозрачным фоном и штриховкой под тёмную тему.
+ * Какую показать, решает CSS по data-theme, поэтому смена темы не перерисовывает компонент.
  * size — высота знака в пикселях.
  */
 export function Logo({ size = 60 }: { size?: number }) {
-  const src = size > 100 ? "/brand/logo.png" : "/brand/logo-200.png";
+  const big = size > 100;
   return (
     <span className="brand-mark" style={{ height: size }}>
-      <img src={src} alt="" height={size} draggable={false} />
+      <img className="brand-light" src={big ? "/brand/logo.png" : "/brand/logo-200.png"} alt="" height={size} draggable={false} />
+      <img className="brand-dark" src={big ? "/brand/logo-dark.png" : "/brand/logo-dark-200.png"} alt="" height={size} draggable={false} />
     </span>
   );
 }

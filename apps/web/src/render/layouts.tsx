@@ -28,6 +28,9 @@ export function cellX(i: number, n: number, cols: number, cellW: number, gap: nu
   return (W - rowW) / 2 + (i % cols) * (cellW + gap);
 }
 
+/** «Число · пояснение»; число не повторяем, если оно уже есть в пояснении. */
+export const valueText = (it: Item) => (it.value && !it.text.includes(it.value) ? [it.value, it.text] : [it.text]).filter(Boolean).join(" · ");
+
 /** Цвет чисел и акцентного текста вне фигур. */
 export const accentText = (p: Paint, c: string) => (p.style.accent === "soft" ? p.spec("card", c).icon : c);
 

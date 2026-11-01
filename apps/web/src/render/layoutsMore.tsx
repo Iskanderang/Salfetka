@@ -4,7 +4,7 @@ import { Text } from "./primitives";
 import { textHeight, type Fitted } from "./text";
 import { tint } from "./themes";
 import type { Paint, Spec } from "./paint";
-import { INNER, PAD, W, Small, accentText, cellX, grid, max, type Renderer } from "./layouts";
+import { INNER, PAD, W, Small, accentText, cellX, grid, max, valueText, type Renderer } from "./layouts";
 
 /** Заливка центрального узла: как у иерархии и карты мыслей. */
 export function rootSpec(p: Paint): Spec {
@@ -389,49 +389,51 @@ const venn: Renderer = (v, p, top) => {
 };
 
 // ───────────────────────── Мишень ─────────────────────────
+/**
+ * Кольца слева, список справа — без соединительных линий: пункт и кольцо связаны цветом
+ * и порядком (сверху вниз = от центра к краю). Значки стоят в своих кольцах на одной вертикали.
+ */
 const target: Renderer = (v, p, top) => {
   const n = v.items.length;
   const R = 230;
-  const cx = 290;
-  const lx = 620;
-  const tw = W - PAD - lx;
+  const cx = PAD + R + 10;
+  const lx = cx + R + 60;
+  const tw = W - PAD - lx - 24;
   const blocks = v.items.map((it) => {
-    const label = p.fit(it.label, tw, 17, 2, p.labelWeight, 13);
-    const text = p.fit([it.value, it.text].filter(Boolean).join(" · "), tw, 13, 2, 400, 11);
-    return { label, text, h: textHeight(label) + 2 + textHeight(text) };
+    const label = p.fit(it.label, tw, 18, 2, p.labelWeight, 13);
+    const text = p.fit(valueText(it), tw, 13, 3, 400, 11);
+    return { label, text, h: Math.max(44, textHeight(label) + (text.lines.length ? 3 + textHeight(text) : 0)) };
   });
-  const gap = 18;
+  const gap = n > 6 ? 12 : 18;
   const total = blocks.reduce((s, b) => s + b.h, 0) + gap * (n - 1);
   const half = Math.max(R, total / 2);
   const cy = top + half + 6;
+  const band = R / n;
+  const badge = Math.min(18, band * 0.42);
 
   const rings: ReactNode[] = [];
   for (let i = n - 1; i >= 0; i--) {
-    const c = p.color(i);
-    rings.push(<g key={`r${i}`}>{p.circle(cx, cy, (R * (i + 1)) / n, p.spec("accent", c))}</g>);
+    const sp = p.spec("accent", p.color(i));
+    // тонкий зазор цветом фона — кольца читаются отдельно
+    rings.push(<g key={`r${i}`}>{p.circle(cx, cy, band * (i + 1), p.sketchy ? sp : { ...sp, stroke: p.t.bg, sw: 3 })}</g>);
   }
 
   let ly = cy - total / 2;
   const marks = v.items.map((it, i) => {
     const c = p.color(i);
     const b = blocks[i];
-    const mid = ly + b.h / 2;
     const y0 = ly;
     ly += b.h + gap;
-    // значки — по одному лучу, по одному на кольцо: так они не налезают друг на друга даже при 8 кольцах
-    const rm = i === 0 ? 0 : (R * (i + 0.5)) / n;
-    const a = (-28 * Math.PI) / 180;
-    const ax = cx + rm * Math.cos(a);
-    const ay = cy + rm * Math.sin(a);
-    const lineC = p.sketchy ? p.lineColor : tint(p.t.text, 0.45);
+    // значок — в середине своего кольца на вертикали над центром
+    const ay = cy - (i === 0 ? 0 : band * (i + 0.5));
+    const textTop = y0 + (b.h - textHeight(b.label) - (b.text.lines.length ? 3 + textHeight(b.text) : 0)) / 2;
     return (
       <g key={i} data-item={i}>
-        {p.line(ax, ay, lx - 26, mid, lineC, 1.5, undefined, `l${i}`)}
-        {p.line(lx - 26, mid, lx - 10, mid, lineC, 1.5, undefined, `t${i}`)}
-        <circle cx={ax} cy={ay} r={Math.min(17, (R / n) * 0.48)} fill={p.t.bg} stroke={c} strokeWidth={2} />
-        {p.icon(it.icon, ax, ay, Math.min(18, (R / n) * 0.55), accentText(p, c), i)}
-        <Text fit={b.label} x={lx} y={y0} anchor="start" color={p.t.text} weight={p.labelWeight} />
-        <Text fit={b.text} x={lx} y={y0 + textHeight(b.label) + 2} anchor="start" color={p.t.muted} />
+        <circle cx={cx} cy={ay} r={badge} fill={p.t.bg} stroke={p.sketchy ? p.lineColor : "none"} strokeWidth={1.5} />
+        {p.icon(it.icon, cx, ay, badge * 1.1, accentText(p, c), i)}
+        {p.rect(lx, y0, 8, b.h, 4, p.spec("accent", c))}
+        <Text fit={b.label} x={lx + 24} y={textTop} anchor="start" color={p.t.text} weight={p.labelWeight} />
+        <Text fit={b.text} x={lx + 24} y={textTop + textHeight(b.label) + 3} anchor="start" color={p.t.muted} />
       </g>
     );
   });

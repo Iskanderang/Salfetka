@@ -17,7 +17,8 @@ export const CATEGORIES: Category[] = [
   { id: "ideas", name: "Идеи и рассказ", icon: "lightbulb", layouts: ["mindmap", "dialogue"] },
   { id: "causes", name: "Причины и решения", icon: "search", layouts: ["fishbone", "decisions"] },
   { id: "frameworks", name: "Бизнес-фреймворки", icon: "briefcase", layouts: ["swot", "pestel", "matrix"] },
-  { id: "metaphors", name: "Визуальные метафоры", icon: "mountain-snow", layouts: ["mountains", "temple", "podium"] },
+  { id: "metaphors", name: "Визуальные метафоры", icon: "mountain-snow", layouts: ["mountains", "temple", "podium", "tree", "rocket", "puzzle", "road", "lock", "bulb"] },
+  { id: "people", name: "Тексты и люди", icon: "users", layouts: ["quote", "glossary", "faq", "persona", "orgchart"] },
 ];
 
 // каждая форма — ровно в одной категории; если нарушено, предупреждаем при разработке
