@@ -11,6 +11,7 @@ import { copyPng, download, slug, svgToPng, svgToString } from "./render/export"
 import { ItemEditor, Popover, TitleEditor } from "./Editor";
 import { Sidebar, type SideTab } from "./Sidebar";
 import { Logo } from "./Logo";
+import { RunTip } from "./RunTip";
 import { Ico } from "./render/primitives";
 import { initialUiTheme } from "./uiTheme";
 import { Help, HELP_TABS, type HelpTab } from "./Help";
@@ -351,11 +352,16 @@ export function App() {
               spellCheck={false}
             />
             <div className="editor-bar">
-              <span className="hint">{selected ? `Выделено: ${selected.length} симв.` : "Выделите фрагмент или визуализируйте весь текст"} · Ctrl+Enter</span>
-              <button className="primary" onClick={() => run()} disabled={!!loading || !source || !status?.ok}>
+              <button
+                className="primary run-btn"
+                onClick={() => run()}
+                disabled={!!loading || !source || !status?.ok}
+                title={selected ? "Визуализировать выделенный фрагмент (Ctrl+Enter)" : "Визуализировать весь текст (Ctrl+Enter)"}
+              >
                 {loading === "new" ? <span className="spinner small" /> : <Ico name="sparkles" />}
-                {loading === "new" ? "Создаю схему…" : selected ? "Визуализировать выделенное" : "Визуализировать всё"}
+                {loading === "new" ? "Создаю схему…" : "Визуализировать"}
               </button>
+              <RunTip onMore={() => setHelp("usage")} />
             </div>
           {history.length > 0 && (
             <div className="history">

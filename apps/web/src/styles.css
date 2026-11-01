@@ -202,7 +202,8 @@ input[type="range"], input[type="color"] { border: none; box-shadow: none; paddi
 .editor textarea { flex: 1; min-height: 160px; resize: none; border: none; border-radius: 0; box-shadow: none; padding: 16px; line-height: 1.6; background: var(--panel); color: var(--text); }
 .editor textarea:focus { box-shadow: none; }
 .editor textarea::selection { background: var(--accent-soft-2); }
-.editor-bar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.editor-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.run-btn { flex: 1; }
 .hint { color: var(--muted); font-size: 12px; }
 .editor-bar .hint { text-align: center; }
 .editor.collapsed { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 12px 0; }
@@ -409,3 +410,34 @@ input[type="range"], input[type="color"] { border: none; box-shadow: none; paddi
 /* окно пункта: кнопки «+ перед / + после» не переносятся */
 .order-row { flex-wrap: wrap; }
 .order-add, .order-add button, .order-row label { white-space: nowrap; }
+
+/* подсказка у кнопки «Визуализировать» */
+.editor-bar { position: relative; }
+.run-tip { flex: none; }
+button.icon-btn.run-tip-btn { width: 40px; height: 40px; color: #e69500; background: var(--warn-soft); border: 1px solid var(--warn-border); }
+.run-tip-btn .ui-ico { fill: rgba(255, 196, 0, 0.35); }
+button.icon-btn.run-tip-btn:hover:not(:disabled), button.icon-btn.run-tip-btn.active { color: #d48500; background: #fff1cc; border-color: #f5c96a; }
+[data-theme="dark"] button.icon-btn.run-tip-btn { color: #ffc23d; }
+[data-theme="dark"] button.icon-btn.run-tip-btn:hover:not(:disabled), [data-theme="dark"] button.icon-btn.run-tip-btn.active { color: #ffd166; background: rgba(255, 194, 61, 0.2); border-color: rgba(255, 194, 61, 0.5); }
+.run-tip-card { position: absolute; left: 12px; right: 12px; bottom: calc(100% - 4px); z-index: 40; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-pop); padding: 14px 16px; font-size: 13px; line-height: 1.5; color: var(--text); animation: rise-sm 0.15s ease-out; }
+.run-tip-title { display: block; font-size: 14px; color: var(--text-strong); margin-bottom: 6px; }
+.run-tip-card ul { margin: 0 0 8px; padding-left: 18px; }
+.run-tip-card li { margin: 3px 0; }
+.run-tip-flow { margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-strong); font-size: 12px; font-weight: 600; }
+
+/* справка: блок «Главное правило» */
+.tip-box { margin: 16px 0 24px; padding: 16px 18px; border-radius: 12px; background: var(--accent-soft); border: 1px solid var(--accent-soft-2); }
+.tip-box h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px !important; color: var(--accent-strong); }
+.tip-box > p { margin: 0 0 10px; }
+.tip-box ul { margin: 0 0 10px; padding-left: 20px; }
+.tip-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.tip-compare > div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.tip-compare b { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.tip-compare p { margin: 4px 0 0; font-size: 13px; }
+.tip-bad b { color: var(--bad); }
+.tip-good b { color: var(--ok); }
+.tip-sub { font-weight: 600; margin-bottom: 4px !important; }
+@media (max-width: 640px) { .tip-compare { grid-template-columns: 1fr; } }
+
+/* светлая тема: белый фон знака сливается с серым фоном рабочей области */
+:root:not([data-theme="dark"]) .empty .brand-mark img { mix-blend-mode: multiply; }
