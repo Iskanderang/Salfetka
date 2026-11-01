@@ -8,6 +8,7 @@ import { INNER, PAD, W, Small, accentText, cellX, grid, max, valueText, type Ren
 
 /** Заливка центрального узла: как у иерархии и карты мыслей. */
 export function rootSpec(p: Paint): Spec {
+  if (p.premium) return p.spec("accent", p.color(0));
   const base = p.spec("accent", p.sketchy ? p.color(3) : p.style.accent === "soft" ? p.color(0) : p.base.title);
   return !p.sketchy && p.style.accent === "solid" ? { ...base, on: p.base.bg } : base;
 }

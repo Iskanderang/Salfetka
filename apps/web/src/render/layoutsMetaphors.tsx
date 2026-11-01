@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Item } from "@napkin/shared";
 import { Text } from "./primitives";
 import { textHeight, type Fitted } from "./text";
-import { tint } from "./themes";
+import { lighten, mix, tint } from "./themes";
 import type { Paint } from "./paint";
 import { INNER, PAD, W, Small, accentText, max, valueText, type Renderer } from "./layouts";
 export { valueText };
@@ -69,6 +69,7 @@ const iceberg: Renderer = (v, p, top) => {
   ];
   const tipSpec = p.spec("accent", ice);
   const underSpec = p.spec("card", ice);
+  const prem = premiumIce(p, cx, waterY, tipH, underH, tip, under, ice, wc);
 
   const marks: ReactNode[] = [];
   let lyTop = waterY - 22 - hv;
@@ -102,10 +103,16 @@ const iceberg: Renderer = (v, p, top) => {
     height: total,
     body: (
       <g>
-        <rect x={0} y={waterY} width={W} height={total - waterY} fill={tint(wc, 0.13)} />
-        {p.curve(wave, tint(wc, 0.8), 2.5, "wave")}
-        {p.poly(under, { ...underSpec, fill: p.sketchy ? underSpec.fill : tint(ice, 0.22) })}
-        {p.poly(tip, tipSpec)}
+        {prem ? (
+          prem(total)
+        ) : (
+          <>
+            <rect x={0} y={waterY} width={W} height={total - waterY} fill={tint(wc, 0.13)} />
+            {p.curve(wave, tint(wc, 0.8), 2.5, "wave")}
+            {p.poly(under, { ...underSpec, fill: p.sketchy ? underSpec.fill : tint(ice, 0.22) })}
+            {p.poly(tip, tipSpec)}
+          </>
+        )}
         <Small p={p} x={lx} y={waterY - 8 - hv - 22} size={11} color={p.t.muted}>
           НА ПОВЕРХНОСТИ
         </Small>
@@ -117,6 +124,66 @@ const iceberg: Renderer = (v, p, top) => {
     ),
   };
 };
+
+/**
+ * Премиум-айсберг: верхушка из светлых и затенённых граней, полупрозрачная подводная часть
+ * из граней-треугольников, море уходит в глубину, сквозь воду — лучи света.
+ */
+function premiumIce(
+  p: Paint,
+  cx: number,
+  waterY: number,
+  tipH: number,
+  underH: number,
+  tip: [number, number][],
+  under: [number, number][],
+  ice: string,
+  wc: string,
+) {
+  if (!p.premium) return null;
+  const dark = p.premium === "dark";
+  const g = (k: string, a: string, b: string, dir: "diag" | "down" = "diag") =>
+    p.gradient(`ice-${k}`, [
+      [0, a],
+      [1, b],
+    ], dir);
+  const lit = g("lit", "#FFFFFF", mix("#D3E6F8", ice, 0.12));
+  const mid = g("mid", mix("#EAF4FF", ice, 0.08), mix("#A9CBEB", ice, 0.15));
+  const shadow = g("shd", mix("#C9DFF5", ice, 0.1), mix("#8DB6DE", ice, 0.22));
+  const sea = dark ? g("sea", "#0E5A8F", "#050E1D", "down") : g("sea", tint(wc, 0.3), tint(wc, 0.04), "down");
+  const ray = g("ray", tint("#BFE4FF", dark ? 0.2 : 0.35), tint("#BFE4FF", 0), "down");
+  const deep = [
+    g("d0", tint(lighten(wc, 0.45), 0.8), tint(wc, 0.3), "down"),
+    g("d1", tint(lighten(wc, 0.25), 0.7), tint(mix(wc, "#0D3F73", 0.5), 0.25), "down"),
+    g("d2", tint(lighten(wc, 0.55), 0.6), tint(wc, 0.18), "down"),
+  ];
+  const [A, B, C, D, E] = tip;
+  const foot = cx - 8;
+  // подводная часть — веер треугольников от внутренней точки
+  const core: [number, number] = [cx - 10, waterY + underH * 0.42];
+  const facets = under.slice(0, -1).map((q, i) => [q, under[i + 1], core] as [number, number][]);
+  const edge = tint("#CFEAFF", dark ? 0.35 : 0.6);
+  return (total: number) => (
+    <g>
+      <rect x={0} y={waterY} width={W} height={total - waterY} fill={sea} />
+      {[-150, -40, 90].map((dx, i) => (
+        <polygon key={`ray${i}`} points={`${cx + dx},${waterY} ${cx + dx + 50},${waterY} ${cx + dx * 1.8 + 160},${total} ${cx + dx * 1.8 + 40},${total}`} fill={ray} />
+      ))}
+      {facets.map((f, i) => (
+        <polygon key={`f${i}`} points={f.map((q) => q.join(",")).join(" ")} fill={deep[i % 3]} stroke={edge} strokeWidth={0.8} strokeLinejoin="round" />
+      ))}
+      <polyline points={under.map((q) => q.join(",")).join(" ")} fill="none" stroke={edge} strokeWidth={1.5} />
+      <ellipse cx={cx} cy={waterY + 1} rx={210} ry={9} fill={tint("#BFE4FF", dark ? 0.35 : 0.6)} />
+      <path d={`M0,${waterY} C${W * 0.15},${waterY - 7} ${W * 0.3},${waterY + 7} ${W * 0.45},${waterY} S${W * 0.75},${waterY - 7} ${W},${waterY}`} stroke={tint(lighten(wc, 0.3), 0.8)} strokeWidth={2} fill="none" />
+      <g filter={p.lift}>
+        <polygon points={`${A.join(",")} ${B.join(",")} ${C.join(",")} ${foot},${waterY}`} fill={shadow} />
+        <polygon points={`${B.join(",")} ${C.join(",")} ${(B[0] + C[0]) / 2 + 4},${waterY - tipH * 0.18}`} fill={mid} />
+        <polygon points={`${C.join(",")} ${D.join(",")} ${E.join(",")} ${foot},${waterY}`} fill={lit} />
+        <polygon points={`${C.join(",")} ${D.join(",")} ${(C[0] + D[0]) / 2 + 10},${waterY - tipH * 0.25}`} fill={mid} />
+      </g>
+    </g>
+  );
+}
 
 // ───────────────────────── Алмаз ─────────────────────────
 const diamond: Renderer = (v, p, top) => {
@@ -442,7 +509,12 @@ const mountains: Renderer = (v, p, top) => {
         {halo(p, x, y, 24)}
         {p.circle(x, y, 19, sp)}
         {p.icon(it.icon, x, y, 18, sp.icon, i)}
-        <rect x={right ? lx - 8 : lx - 238} y={y - b.h / 2 - 6} width={246} height={b.h + 12} rx={8} fill={p.t.bg} opacity={0.85} />
+        {p.premium ? (
+          // премиум: подложка — та же карточка, что и везде (белая с тенью / «стекло»)
+          p.rect(lx - 10, y - b.h / 2 - 7, 250, b.h + 14, 8, p.spec("card", c))
+        ) : (
+          <rect x={right ? lx - 8 : lx - 238} y={y - b.h / 2 - 6} width={246} height={b.h + 12} rx={8} fill={p.t.bg} opacity={0.85} />
+        )}
         {drawLabel(p, b, lx, y - b.h / 2, right ? "start" : "end")}
       </g>
     );
@@ -451,8 +523,14 @@ const mountains: Renderer = (v, p, top) => {
     height: base + 26,
     body: (
       <g>
-        {p.poly(back, { ...p.spec("card", p.color(1)), fill: p.sketchy ? p.spec("card", p.color(1)).fill : tint(p.color(1), 0.16) })}
-        {p.poly(main, { ...p.spec("card", c0), fill: p.sketchy ? p.spec("card", c0).fill : tint(c0, 0.22) })}
+        {p.premium ? (
+          premiumSlopes(p, back, main, c0)
+        ) : (
+          <>
+            {p.poly(back, { ...p.spec("card", p.color(1)), fill: p.sketchy ? p.spec("card", p.color(1)).fill : tint(p.color(1), 0.16) })}
+            {p.poly(main, { ...p.spec("card", c0), fill: p.sketchy ? p.spec("card", c0).fill : tint(c0, 0.22) })}
+          </>
+        )}
         {p.poly(snow, { fill: p.t.bg, stroke: p.sketchy ? p.lineColor : "none", sw: 1.2, on: "", onMuted: "", icon: "" })}
         {p.curve(trail, p.sketchy ? p.lineColor : tint(p.t.title, 0.55), 2.5, "trail")}
         {!p.sketchy && <path d={trail} fill="none" stroke={p.t.bg} strokeWidth={1} strokeDasharray="2 6" />}
@@ -461,6 +539,35 @@ const mountains: Renderer = (v, p, top) => {
     ),
   };
 };
+
+/** Премиум-горы: у каждой вершины освещённый левый склон и теневой правый. */
+function premiumSlopes(p: Paint, back: [number, number][], main: [number, number][], c0: string) {
+  const dark = p.premium === "dark";
+  const c1 = p.color(1);
+  const slope = (k: string, c: string, lit: boolean, far: boolean) => {
+    const a = dark ? tint(c, far ? 0.32 : lit ? 0.6 : 0.42) : lighten(c, far ? 0.8 : lit ? 0.62 : 0.45);
+    const b = dark ? tint(c, far ? 0.08 : 0.16) : lighten(c, far ? 0.92 : 0.85);
+    return p.gradient(`mt-${k}`, [
+      [0, a],
+      [1, b],
+    ], "down");
+  };
+  const halves = (pts: [number, number][], k: string, c: string, far: boolean) => {
+    const [l, top, r] = pts;
+    return (
+      <g key={k}>
+        <polygon points={`${l.join(",")} ${top.join(",")} ${top[0]},${l[1]}`} fill={slope(`${k}l`, c, true, far)} />
+        <polygon points={`${top.join(",")} ${r.join(",")} ${top[0]},${r[1]}`} fill={slope(`${k}r`, c, false, far)} />
+      </g>
+    );
+  };
+  return (
+    <>
+      {halves(back, "b", c1, true)}
+      {halves(main, "m", c0, false)}
+    </>
+  );
+}
 
 // ───────────────────────── Храм ─────────────────────────
 const temple: Renderer = (v, p, top) => {
@@ -490,7 +597,7 @@ const temple: Renderer = (v, p, top) => {
   const colBottom = colTop + colH;
   const fLabel = p.fit(found ? `${found.label}${found.text ? " — " + found.text : ""}` : "", width - 40, 17, 2, p.labelWeight, 12);
   const fH = Math.max(56, textHeight(fLabel) + 24);
-  const ink = p.sketchy ? p.lineColor : p.t.title;
+  const ink = p.sketchy ? p.lineColor : p.premium ? mix(p.color(0), p.t.title, 0.55) : p.t.title;
 
   const totalW = k * cw + (k - 1) * cgap;
   const cx0 = (W - totalW) / 2;

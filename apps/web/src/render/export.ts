@@ -4,7 +4,8 @@ export async function svgToString(svg: SVGSVGElement, transparent = false): Prom
   const clone = svg.cloneNode(true) as SVGSVGElement;
   clone.removeAttribute("class");
   clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  if (transparent) clone.querySelector("[data-bg]")?.remove();
+  // фон — это и сплошная заливка, и украшения премиум-стиля (свечение, ночное небо)
+  if (transparent) clone.querySelectorAll("[data-bg]").forEach((el) => el.remove());
   clone.querySelectorAll("[data-item],[data-icon],[data-title]").forEach((el) => {
     el.removeAttribute("data-item");
     el.removeAttribute("data-icon");

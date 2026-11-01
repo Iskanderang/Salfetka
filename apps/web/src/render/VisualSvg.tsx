@@ -1,11 +1,12 @@
-import { forwardRef, useMemo } from "react";
-import type { Layout, Visual } from "@napkin/shared";
+import { forwardRef, useId, useMemo } from "react";
+import { LAYOUT_LABELS, type Layout, type Visual } from "@napkin/shared";
+import { CATEGORIES } from "../catalog";
 import { W } from "./layouts";
 import { RENDERERS, NO_HEADER } from "./renderers";
 import { Paint, DEFAULT_LOOK, type Look } from "./paint";
 import { Text } from "./primitives";
 import { textHeight } from "./text";
-import type { Theme } from "./themes";
+import { lighten, type Theme } from "./themes";
 import type { StyleDef } from "./styles";
 
 type Props = {
@@ -21,8 +22,9 @@ type Props = {
 };
 
 export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, theme, style, look = DEFAULT_LOOK, transparent, className }, ref) => {
-  const { height, content, bg, font, bodyWeight } = useMemo(() => {
-    const p = new Paint(style, theme, visual, look);
+  const uid = "nf" + useId().replace(/[^\w]/g, "");
+  const { height, content, bg, font, bodyWeight, defs, backdrop } = useMemo(() => {
+    const p = new Paint(style, theme, visual, look, uid);
     const t = p.t;
     const header = NO_HEADER.includes(layout) ? "none" : style.header;
     const titleFit = p.fit(visual.title, header === "band" ? W - 80 : W - 120, 34, 2, p.titleWeight, 24);
@@ -38,6 +40,21 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
         </g>
       );
       top = 44 + th + (header === "underline" ? 52 : 40);
+    } else if (header === "hero") {
+      // как на лендинге: маленькая надпись капсом и крупный заголовок слева
+      const kickerColor = p.premium === "dark" ? lighten(p.color(0), 0.35) : p.color(0);
+      const heroFit = p.fit(visual.title, W - 120, 40, 2, p.titleWeight, 26);
+      head = (
+        <g data-title="1">
+          <text x={60} y={62} fontSize={13} fontWeight={800} letterSpacing={2.6} fill={kickerColor}>
+            {(CATEGORIES.find((c) => c.layouts.includes(layout))?.name ?? LAYOUT_LABELS[layout]).toUpperCase()}
+          </text>
+          <g letterSpacing={-0.6}>
+            <Text fit={heroFit} x={60} y={76} anchor="start" color={t.title} weight={p.titleWeight} />
+          </g>
+        </g>
+      );
+      top = 76 + textHeight(heroFit) + 48;
     } else if (header === "band") {
       const bandH = th + 48;
       head = (
@@ -50,8 +67,44 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
       top = bandH + 40;
     }
     const r = RENDERERS[layout](visual, p, top);
+    const height = r.height + (p.premium ? 20 : 0);
+    // фон премиум-стиля: мягкое свечение цветов палитры (свой фон пользователя — без украшений)
+    let backdrop = null;
+    if (p.premium && !look.bg) {
+      backdrop =
+        p.premium === "dark" ? (
+          <>
+            <rect data-bg="1" width={W} height={height} fill={p.gradient("night", [[0, "#081225"], [1, "#0F2747"]], "down")} />
+            <ellipse data-bg="1" cx={W * 0.22} cy={0} rx={W * 0.55} ry={360} fill={`url(#${uid}-glow0)`} />
+            <ellipse data-bg="1" cx={W * 0.95} cy={height} rx={W * 0.5} ry={320} fill={`url(#${uid}-glow1)`} />
+          </>
+        ) : (
+          <>
+            <ellipse data-bg="1" cx={W * 0.08} cy={0} rx={W * 0.6} ry={380} fill={`url(#${uid}-glow0)`} />
+            <ellipse data-bg="1" cx={W * 0.98} cy={height} rx={W * 0.55} ry={340} fill={`url(#${uid}-glow1)`} />
+          </>
+        );
+    }
     return {
-      height: r.height,
+      height,
+      backdrop,
+      defs: (
+        <>
+          {p.defsNodes()}
+          {p.premium && (
+            <>
+              <radialGradient id={`${uid}-glow0`}>
+                <stop offset="0" stopColor={p.color(0)} stopOpacity={p.premium === "dark" ? 0.26 : 0.16} />
+                <stop offset="1" stopColor={p.color(0)} stopOpacity={0} />
+              </radialGradient>
+              <radialGradient id={`${uid}-glow1`}>
+                <stop offset="0" stopColor={p.color(1)} stopOpacity={p.premium === "dark" ? 0.13 : 0.11} />
+                <stop offset="1" stopColor={p.color(1)} stopOpacity={0} />
+              </radialGradient>
+            </>
+          )}
+        </>
+      ),
       bg: t.bg,
       font: p.font,
       bodyWeight: p.bodyWeight,
@@ -62,7 +115,7 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
         </>
       ),
     };
-  }, [visual, layout, theme, style, look]);
+  }, [visual, layout, theme, style, look, uid]);
 
   return (
     <svg ref={ref} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${height}`} width={W} height={height} className={className} fontFamily={font} fontWeight={bodyWeight}>
@@ -71,8 +124,10 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
           <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" />
           <feDisplacementMap in="SourceGraphic" scale="2.2" />
         </filter>
+        {defs}
       </defs>
       {!transparent && <rect data-bg="1" width={W} height={height} fill={bg} />}
+      {!transparent && backdrop}
       {content}
     </svg>
   );

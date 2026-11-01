@@ -11,6 +11,8 @@ import "@fontsource/pt-serif/400.css";
 import "@fontsource/pt-serif/700.css";
 import "@fontsource/caveat/400.css";
 import "@fontsource/caveat/700.css";
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/700.css";
 
 export type FontDef = {
   id: string;
@@ -24,6 +26,7 @@ export type FontDef = {
 };
 
 export const FONTS: FontDef[] = [
+  { id: "manrope", name: "Manrope", family: "Manrope", stack: '"Manrope", "Segoe UI", Arial, sans-serif', scale: 1 },
   { id: "inter", name: "Inter", family: "Inter", stack: '"Inter", "Segoe UI", Arial, sans-serif', scale: 1 },
   { id: "montserrat", name: "Montserrat", family: "Montserrat", stack: '"Montserrat", "Segoe UI", Arial, sans-serif', scale: 0.95 },
   { id: "rubik", name: "Rubik", family: "Rubik", stack: '"Rubik", "Segoe UI", Arial, sans-serif', scale: 1 },

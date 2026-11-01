@@ -3,7 +3,7 @@ import rough from "roughjs";
 import type { Drawable } from "roughjs/bin/core";
 import type { Visual } from "@napkin/shared";
 import { fitText, type Fitted } from "./text";
-import { contrast, lighten, mix, shade, tint, withBackground, type Theme } from "./themes";
+import { contrast, lighten, luminance, mix, shade, tint, withBackground, type Theme } from "./themes";
 import type { StyleDef } from "./styles";
 import { fontById } from "./fonts";
 import { Icon } from "./primitives";
@@ -20,6 +20,8 @@ export type Spec = {
   /** иконка поверх фигуры */
   icon: string;
   dash?: string;
+  /** Фильтр SVG (мягкая тень премиум-стиля) */
+  filter?: string;
 };
 
 export type Role = "accent" | "card" | "chip" | "plain";
@@ -73,11 +75,15 @@ export class Paint {
   readonly font: string;
   readonly textColorApplied: boolean;
   private readonly scale: number;
+  /** Градиенты и фильтры, которые понадобились при рисовании, — VisualSvg кладёт их в <defs> */
+  private readonly defs = new Map<string, ReactNode>();
   constructor(
     readonly style: StyleDef,
     theme: Theme,
     readonly visual: Visual,
     readonly look: Look = DEFAULT_LOOK,
+    /** Префикс id: на странице несколько схем (миниатюры), их градиенты не должны пересекаться */
+    readonly uid = "nf",
   ) {
     const styled = style.fixedTheme ?? { ...theme, ...style.override };
     this.base = look.bg ? withBackground(styled, look.bg) : styled;
@@ -103,8 +109,58 @@ export class Paint {
   /** Цвет пункта: свой (если задан) или из палитры. */
   color(i: number): string {
     const own = this.visual.items[i]?.color;
-    if (own && !this.style.fixedTheme) return own;
-    return this.t.palette[i % this.t.palette.length];
+    const c = own && !this.style.fixedTheme ? own : this.t.palette[i % this.t.palette.length];
+    // на ночном фоне слишком тёмные цвета палитры (Минимал, Корпоратив) теряются — высветляем
+    return this.premium === "dark" && luminance(c) < 0.12 ? lighten(c, 0.45) : c;
+  }
+
+  get premium() {
+    return this.style.premium;
+  }
+
+  // ─── Градиенты и тени (премиум) ───────────────────────────
+
+  /** Линейный градиент по ключу; stops — [смещение, цвет с необязательной прозрачностью #RRGGBBAA]. */
+  gradient(key: string, stops: [number, string][], dir: "diag" | "down" | "right" = "diag"): string {
+    const id = `${this.uid}-${key.replace(/[^\w-]/g, "")}`;
+    if (!this.defs.has(id)) {
+      const [x2, y2] = dir === "diag" ? [1, 1] : dir === "down" ? [0, 1] : [1, 0];
+      this.defs.set(
+        id,
+        <linearGradient key={id} id={id} x1="0" y1="0" x2={x2} y2={y2}>
+          {stops.map(([o, c], i) => (
+            <stop key={i} offset={o} stopColor={c.slice(0, 7)} stopOpacity={c.length > 7 ? parseInt(c.slice(7, 9), 16) / 255 : 1} />
+          ))}
+        </linearGradient>,
+      );
+    }
+    return `url(#${id})`;
+  }
+
+  /** Насыщенный градиент цвета: светлее слева сверху, глубже справа снизу. */
+  private grad(c: string) {
+    return this.gradient(`a${c}`, [
+      [0, lighten(c, 0.2)],
+      [1, shade(c, 0.08)],
+    ]);
+  }
+
+  /** Мягкая тень карточек: короткая и светлая, без «тяжести». */
+  get lift(): string | undefined {
+    if (this.premium !== "light") return undefined;
+    const id = `${this.uid}-lift`;
+    if (!this.defs.has(id))
+      this.defs.set(
+        id,
+        <filter key={id} id={id} x="-20%" y="-20%" width="140%" height="160%">
+          <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#1E3A8A" floodOpacity="0.09" />
+        </filter>,
+      );
+    return `url(#${id})`;
+  }
+
+  defsNodes(): ReactNode[] {
+    return [...this.defs.values()];
   }
 
   r(base: number) {
@@ -141,10 +197,37 @@ export class Paint {
     return sp;
   }
 
+  private premiumSpec(role: Role, c: string): Spec {
+    const t = this.t;
+    const dark = this.premium === "dark";
+    if (role === "accent")
+      return { fill: this.grad(c), stroke: dark ? tint("#FFFFFF", 0.14) : "none", sw: dark ? 1 : 0, on: "#FFFFFF", onMuted: "#FFFFFFD9", icon: "#FFFFFF" };
+    if (role === "chip")
+      return dark
+        ? { fill: tint(c, 0.22), stroke: tint(c, 0.45), sw: 1, on: lighten(c, 0.55), onMuted: t.muted, icon: lighten(c, 0.35) }
+        : {
+            fill: this.gradient(`c${c}`, [
+              [0, lighten(c, 0.9)],
+              [1, lighten(c, 0.78)],
+            ]),
+            stroke: "none",
+            sw: 0,
+            on: shade(c, 0.35),
+            onMuted: t.muted,
+            icon: shade(c, 0.12),
+          };
+    // карточка: белая с тенью на светлом фоне, «стекло» на ночном
+    const card: Spec = dark
+      ? { fill: tint("#FFFFFF", 0.06), stroke: tint("#FFFFFF", 0.14), sw: 1, on: t.text, onMuted: t.muted, icon: lighten(c, 0.25) }
+      : { fill: "#FFFFFF", stroke: "#E3E9F2", sw: 1, on: t.text, onMuted: t.muted, icon: c };
+    return role === "card" ? { ...card, filter: this.lift } : card;
+  }
+
   private rawSpec(role: Role, c: string): Spec {
     const t = this.t;
     const s = this.style;
     const ink = this.ink;
+    if (s.premium) return this.premiumSpec(role, c);
     if (s.sketch) {
       // «от руки»: штриховка цветом, контур чернилами (или мелом)
       const line = ink ?? c;
@@ -221,13 +304,13 @@ export class Paint {
 
   path(d: string, sp: Spec, key?: string | number, seedXY: number[] = [d.length]): ReactNode {
     if (this.sketchy) return this.rough(gen.path(d, this.roughOpts(sp, hash(...seedXY))), key, this.solid(sp) ? <path d={d} fill={this.t.bg} /> : null);
-    return <path key={key} d={d} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} />;
+    return <path key={key} d={d} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
   }
 
   rect(x: number, y: number, w: number, h: number, r: number, sp: Spec, key?: string | number): ReactNode {
     const rr = this.r(r);
     if (this.sketchy) return this.path(roundedRectPath(x, y, w, h, rr), sp, key, [x, y, w, h]);
-    return <rect key={key} x={x} y={y} width={w} height={h} rx={rr} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} />;
+    return <rect key={key} x={x} y={y} width={w} height={h} rx={rr} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
   }
 
   topRect(x: number, y: number, w: number, h: number, r: number, sp: Spec, key?: string | number): ReactNode {
@@ -238,7 +321,7 @@ export class Paint {
   circle(cx: number, cy: number, r: number, sp: Spec, key?: string | number, seeThrough = false): ReactNode {
     if (this.sketchy)
       return this.rough(gen.circle(cx, cy, r * 2, this.roughOpts(sp, hash(cx, cy, r))), key, this.solid(sp) && !seeThrough ? <circle cx={cx} cy={cy} r={r} fill={this.t.bg} /> : null);
-    return <circle key={key} cx={cx} cy={cy} r={r} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} />;
+    return <circle key={key} cx={cx} cy={cy} r={r} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
   }
 
   poly(pts: [number, number][], sp: Spec, key?: string | number): ReactNode {
@@ -248,7 +331,7 @@ export class Paint {
         key,
         this.solid(sp) ? <polygon points={pts.map((q) => q.join(",")).join(" ")} fill={this.t.bg} /> : null,
       );
-    return <polygon key={key} points={pts.map((p) => p.join(",")).join(" ")} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeLinejoin="round" />;
+    return <polygon key={key} points={pts.map((p) => p.join(",")).join(" ")} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeLinejoin="round" filter={sp.filter} />;
   }
 
   line(x1: number, y1: number, x2: number, y2: number, color: string, width = 2, dash?: string, key?: string | number): ReactNode {

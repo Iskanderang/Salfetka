@@ -2,6 +2,7 @@ import { FONT } from "./text";
 import type { Theme } from "./themes";
 
 export const HAND_FONT = '"Caveat", "Segoe Print", cursive';
+export const PREMIUM_FONT = '"Manrope", "Segoe UI", Arial, sans-serif';
 export const BIZ_FONT = 'Bahnschrift, "Segoe UI", Arial, sans-serif';
 
 /**
@@ -26,7 +27,9 @@ export type StyleDef = {
   stroke: number;
   iconStroke: number;
   /** Шапка с заголовком */
-  header: "center" | "underline" | "band";
+  header: "center" | "underline" | "band" | "hero";
+  /** «Как лендинг»: градиенты, мягкие тени, крупная типографика; светлый или ночной фон */
+  premium?: "light" | "dark";
   /** Нарисовано от руки (rough.js) */
   sketch?: { roughness: number; bowing: number; fillStyle: string; hachureGap: number; fillWeight: number; ink?: string };
   /** Переопределение цветов темы (фон бумаги, чернила) */
@@ -142,6 +145,40 @@ export const STYLES: StyleDef[] = [
     header: "underline",
     sketch: { roughness: 1.6, bowing: 1.5, fillStyle: "hachure", hachureGap: 9, fillWeight: 1 },
     fixedTheme: CHALK,
+  },
+  {
+    id: "premium",
+    name: "Премиум",
+    hint: "Как лендинг, светлый",
+    font: PREMIUM_FONT,
+    textScale: 1,
+    titleWeight: 800,
+    labelWeight: 700,
+    accent: "solid",
+    card: "plain",
+    radius: 1.4,
+    stroke: 1,
+    iconStroke: 1.9,
+    header: "hero",
+    premium: "light",
+    override: { bg: "#F7F9FD", card: "#FFFFFF", title: "#0B1220", text: "#1E293B", muted: "#64748B", line: "#DCE4EF", onAccent: "#FFFFFF" },
+  },
+  {
+    id: "premium-night",
+    name: "Премиум · ночь",
+    hint: "Как лендинг, тёмный",
+    font: PREMIUM_FONT,
+    textScale: 1,
+    titleWeight: 800,
+    labelWeight: 700,
+    accent: "solid",
+    card: "plain",
+    radius: 1.4,
+    stroke: 1,
+    iconStroke: 1.9,
+    header: "hero",
+    premium: "dark",
+    override: { bg: "#0A1428", card: "#13223D", title: "#FFFFFF", text: "#E6EEF8", muted: "#93A7C2", line: "#2A4166", onAccent: "#FFFFFF" },
   },
 ];
 

@@ -1,7 +1,7 @@
 import type { Item } from "@napkin/shared";
 import { Text } from "./primitives";
 import { textHeight, type Fitted } from "./text";
-import { lighten, tint } from "./themes";
+import { lighten, mix, tint } from "./themes";
 import type { Paint, Spec } from "./paint";
 import { INNER, PAD, W, accentText, cardBlock, drawCard, max, type Renderer } from "./layouts";
 import { halo } from "./layoutsMore";
@@ -44,6 +44,22 @@ function extraCards(p: Paint, items: Item[], first: number, y: number) {
   };
 }
 
+/** Цвет палитры, ближе всего к зелёному: крона «живая» в любой палитре, где зелёный есть. */
+function greenest(p: Paint) {
+  const hue = (c: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16) / 255);
+    const mx = Math.max(r, g, b);
+    const mn = Math.min(r, g, b);
+    if (mx === mn) return { h: 0, s: 0 };
+    const d = mx - mn;
+    const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return { h: (h * 60 + 360) % 360, s: d / mx };
+  };
+  const cands = p.t.palette.map((c) => ({ c, ...hue(c) })).filter((x) => x.s > 0.25);
+  if (!cands.length) return p.color(0);
+  return cands.sort((a, b) => Math.abs(a.h - 140) - Math.abs(b.h - 140))[0].c;
+}
+
 // ───────────────────────── Дерево ─────────────────────────
 const tree: Renderer = (v, p, top) => {
   const n = v.items.length;
@@ -58,8 +74,18 @@ const tree: Renderer = (v, p, top) => {
   const fGap = 34;
   const colH = max(fBlocks.map((b) => stackH(b, fGap)));
   const cy = top + Math.max(165, colH / 2 + 10);
-  const crownC = fruits.length ? p.color(nRoots) : p.color(0);
-  const crownSp: Spec = p.sketchy ? { ...p.spec("card", crownC), stroke: "none" } : { fill: lighten(crownC, 0.78), stroke: "none", sw: 0, on: "", onMuted: "", icon: "" };
+  const crownC = p.premium ? greenest(p) : fruits.length ? p.color(nRoots) : p.color(0);
+  const crownSp: Spec = p.sketchy
+    ? { ...p.spec("card", crownC), stroke: "none" }
+    : {
+        // крона из перекрывающихся кругов — только сплошной цвет, иначе на стыках пятна
+        fill: p.premium === "dark" ? mix(crownC, p.t.bg, 0.5) : lighten(crownC, p.premium ? 0.7 : 0.78),
+        stroke: "none",
+        sw: 0,
+        on: "",
+        onMuted: "",
+        icon: "",
+      };
   const blobs: [number, number, number][] = [
     [0, -70, 100],
     [-100, -20, 88],
@@ -527,7 +553,21 @@ const bulb: Renderer = (v, p, top) => {
   const neckTop = cy + R * 0.78;
   const neckBottom = cy + R + 50;
   const glass = `M${cx - 62},${neckTop + 4} A${R},${R} 0 1 1 ${cx + 62},${neckTop + 4} L${cx + 46},${neckBottom} L${cx - 46},${neckBottom} Z`;
-  const glassSp: Spec = p.sketchy ? p.spec("card", glow) : { fill: tint(glow, 0.28), stroke: glow, sw: 3, on: "", onMuted: "", icon: "" };
+  const glassSp: Spec = p.sketchy
+    ? p.spec("card", glow)
+    : p.premium
+      ? {
+          fill: p.gradient("glass", [
+            [0, tint(lighten(glow, 0.6), 0.85)],
+            [1, tint(glow, 0.35)],
+          ]),
+          stroke: tint(glow, 0.9),
+          sw: 2,
+          on: "",
+          onMuted: "",
+          icon: "",
+        }
+      : { fill: tint(glow, 0.28), stroke: glow, sw: 3, on: "", onMuted: "", icon: "" };
   const rays = [-150, -120, -90, -60, -30].map((a) => (a * Math.PI) / 180);
 
   const side = (ids: number[], s: -1 | 1) => {
@@ -566,6 +606,8 @@ const bulb: Renderer = (v, p, top) => {
         {rays.map((a, j) => (
           <g key={`r${j}`}>{p.line(cx + Math.cos(a) * (R + 22), cy + Math.sin(a) * (R + 22), cx + Math.cos(a) * (R + 48), cy + Math.sin(a) * (R + 48), glow, 5, undefined, `ray${j}`)}</g>
         ))}
+        {p.premium && <circle cx={cx} cy={cy} r={R + 70} fill={tint(glow, p.premium === "dark" ? 0.1 : 0.12)} />}
+        {p.premium && <circle cx={cx} cy={cy} r={R + 34} fill={tint(glow, p.premium === "dark" ? 0.12 : 0.14)} />}
         {p.path(glass, glassSp, "glass", [cx, cy, 3])}
         {p.curve(`M${cx - 30},${neckTop} L${cx - 22},${cy - 6} Q${cx - 11},${cy - 30} ${cx},${cy - 6} Q${cx + 11},${cy - 30} ${cx + 22},${cy - 6} L${cx + 30},${neckTop}`, p.sketchy ? p.lineColor : glow, 4, "filament")}
         {[0, 1, 2].map((j) => (
