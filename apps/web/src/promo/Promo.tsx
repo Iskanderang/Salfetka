@@ -17,40 +17,40 @@ import data from "./data.json";
 
 export const DURATION = 39.5;
 /** На сколько сдвинуты сцены после «сетки форм» (её вставили после смены форм) */
-const GRID_SHIFT = 4.2;
-const visual = data.visual as Visual;
+export const GRID_SHIFT = 4.2;
+export const visual = data.visual as Visual;
 const process = data.process as ProcessGraph;
-const theme = THEMES[0];
-const FONT = '"Manrope", "Segoe UI", sans-serif';
-const BLUE = "#258DE8";
+export const theme = THEMES[0];
+export const FONT = '"Manrope", "Segoe UI", sans-serif';
+export const BLUE = "#258DE8";
 
 // ─── Время и плавность ───────────────────────────────────────
-const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
-const prog = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
-const eOut = (x: number) => 1 - Math.pow(1 - x, 3);
-const eInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
-const eBack = (x: number) => {
+export const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+export const prog = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
+export const eOut = (x: number) => 1 - Math.pow(1 - x, 3);
+export const eInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+export const eBack = (x: number) => {
   const c1 = 1.70158;
   const c3 = c1 + 1;
   return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
 };
 /** Видимость сцены: плавно появляется в начале и уходит в конце */
-const vis = (t: number, a: number, b: number, f = 0.45) => Math.min(eOut(prog(t, a, a + f)), 1 - eInOut(prog(t, b - f, b)));
+export const vis = (t: number, a: number, b: number, f = 0.45) => Math.min(eOut(prog(t, a, a + f)), 1 - eInOut(prog(t, b - f, b)));
 
 // ─── Общие детали ────────────────────────────────────────────
-function Scene({ t, a, b, children, style }: { t: number; a: number; b: number; children: ReactNode; style?: CSSProperties }) {
+export function Scene({ t, a, b, children, style }: { t: number; a: number; b: number; children: ReactNode; style?: CSSProperties }) {
   const v = vis(t, a, b);
   if (v <= 0.001) return null;
   return <div style={{ position: "absolute", inset: 0, opacity: v, ...style }}>{children}</div>;
 }
 
-function Caption({ t, a, b, children }: { t: number; a: number; b: number; children: ReactNode }) {
+export function Caption({ t, a, b, children, bottom = 64, size = 46 }: { t: number; a: number; b: number; children: ReactNode; bottom?: number; size?: number }) {
   const v = vis(t, a, b, 0.35);
   if (v <= 0.001) return null;
   const y = (1 - eOut(prog(t, a, a + 0.55))) * 28;
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, bottom: 64, display: "flex", justifyContent: "center", opacity: v, transform: `translateY(${y}px)` }}>
-      <div style={{ font: `800 46px ${FONT}`, color: "#fff", letterSpacing: "-0.5px", padding: "14px 34px", borderRadius: 999, background: "rgba(10,20,40,0.55)", border: "1px solid rgba(255,255,255,0.14)", backdropFilter: "blur(8px)" }}>
+    <div style={{ position: "absolute", left: 0, right: 0, bottom, display: "flex", justifyContent: "center", opacity: v, transform: `translateY(${y}px)` }}>
+      <div style={{ font: `800 ${size}px ${FONT}`, textAlign: "center", maxWidth: "88%", color: "#fff", letterSpacing: "-0.5px", padding: "14px 34px", borderRadius: 999, background: "rgba(10,20,40,0.55)", border: "1px solid rgba(255,255,255,0.14)", backdropFilter: "blur(8px)" }}>
         {children}
       </div>
     </div>
@@ -58,7 +58,7 @@ function Caption({ t, a, b, children }: { t: number; a: number; b: number; child
 }
 
 /** Белая карточка-«окно» со схемой */
-function Card({ x, y, w, h, children, style }: { x: number; y: number; w: number; h: number; children: ReactNode; style?: CSSProperties }) {
+export function Card({ x, y, w, h, children, style }: { x: number; y: number; w: number; h: number; children: ReactNode; style?: CSSProperties }) {
   return (
     <div
       style={{
@@ -79,10 +79,10 @@ function Card({ x, y, w, h, children, style }: { x: number; y: number; w: number
   );
 }
 
-const fill: CSSProperties = { width: "100%", height: "100%", display: "block" };
+export const fill: CSSProperties = { width: "100%", height: "100%", display: "block" };
 
 /** Появление пунктов схемы по одному: пружинка + прозрачность */
-function usePop(ref: React.RefObject<HTMLDivElement>, t: number, start: number, step: number, sel = "[data-item]") {
+export function usePop(ref: React.RefObject<HTMLDivElement>, t: number, start: number, step: number, sel = "[data-item]") {
   useLayoutEffect(() => {
     const root = ref.current;
     if (!root) return;
@@ -99,7 +99,7 @@ function usePop(ref: React.RefObject<HTMLDivElement>, t: number, start: number, 
 }
 
 // ─── Фон: ночное небо бренда с медленным свечением ───────────
-function Backdrop({ t }: { t: number }) {
+export function Backdrop({ t }: { t: number }) {
   const gx = 30 + Math.sin(t * 0.25) * 8;
   const gy = 18 + Math.cos(t * 0.2) * 6;
   return (
@@ -201,9 +201,9 @@ function TextToVisual({ t }: { t: number }) {
 }
 
 // ─── Сцена 3: 43 формы ───────────────────────────────────────
-const SHAPES: Layout[] = ["roadmap", "mountains", "iceberg", "target", "rocket", "stairs"];
-const SHAPE_T0 = 8.8;
-const SHAPE_DUR = 0.95;
+export const SHAPES: Layout[] = ["roadmap", "mountains", "iceberg", "target", "rocket", "stairs"];
+export const SHAPE_T0 = 8.8;
+export const SHAPE_DUR = 0.95;
 function Shapes({ t }: { t: number }) {
   const n = Math.round(43 * eOut(prog(t, 8.9, 10.4)));
   return (
@@ -238,8 +238,8 @@ function Shapes({ t }: { t: number }) {
 
 // ─── Сцена 3½: все 43 формы сеткой ───────────────────────────
 /** Для форм со своим числом пунктов — подходящий пример, иначе схема выглядит странно */
-const extra = (data as unknown as { extra: Record<string, Visual> }).extra;
-const SAMPLE: Partial<Record<Layout, Visual>> = {
+export const extra = (data as unknown as { extra: Record<string, Visual> }).extra;
+export const SAMPLE: Partial<Record<Layout, Visual>> = {
   proscons: extra.lock,
   scales: extra.lock,
   compare: extra.lock,
@@ -257,12 +257,12 @@ const SAMPLE: Partial<Record<Layout, Visual>> = {
   persona: extra.persona,
   orgchart: extra.orgchart,
 };
-const ALL: Layout[] = CATEGORIES.flatMap((c) => c.layouts);
+export const ALL: Layout[] = CATEGORIES.flatMap((c) => c.layouts);
 // снизу оставляем полосу под титр, чтобы он не закрывал последний ряд
 const G = { cols: 9, rows: 5, pad: 36, gap: 14, bottom: 172 };
 const cellW = (1920 - 2 * G.pad - (G.cols - 1) * G.gap) / G.cols;
 const cellH = (1080 - G.pad - G.bottom - (G.rows - 1) * G.gap) / G.rows;
-const GRID_A = 14.2;
+export const GRID_A = 14.2;
 
 function Grid({ t }: { t: number }) {
   // разлёт из центральной карточки прошлой сцены; ближние к центру клетки прилетают первыми
@@ -326,9 +326,9 @@ function Grid({ t }: { t: number }) {
 }
 
 // ─── Сцена 4: стили ──────────────────────────────────────────
-const STYLE_IDS = ["flat", "napkin", "chalk", "business", "premium-night"];
-const STYLE_T0 = 14.7;
-const STYLE_DUR = 0.95;
+export const STYLE_IDS = ["flat", "napkin", "chalk", "business", "premium-night"];
+export const STYLE_T0 = 14.7;
+export const STYLE_DUR = 0.95;
 function Styles({ t }: { t: number }) {
   const active = Math.floor(clamp((t - STYLE_T0) / STYLE_DUR, 0, STYLE_IDS.length - 1));
   return (
@@ -440,7 +440,7 @@ function Process({ t }: { t: number }) {
 }
 
 // ─── Сцена 6: выгрузка ───────────────────────────────────────
-const EXPORTS = [
+export const EXPORTS = [
   { ext: "PNG", note: "для документов и постов", color: "#258DE8" },
   { ext: "SVG", note: "вектор для Figma и печати", color: "#7C5CFF" },
   { ext: ".drawio", note: "правка процессов в Draw.io", color: "#F08A24" },
@@ -555,7 +555,8 @@ declare global {
   }
 }
 
-export function Promo() {
+/** Время ролика: задаётся снаружи (__setTime) при записи, ?play — проигрывание, ?t= — стоп-кадр */
+export function useTimeline() {
   const params = new URLSearchParams(location.search);
   const [t, setT] = useState(Number(params.get("t") ?? 0));
   useEffect(() => {
@@ -571,6 +572,11 @@ export function Promo() {
     id = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(id);
   }, []);
+  return t;
+}
+
+export function Promo() {
+  const t = useTimeline();
   return (
     <div style={{ position: "relative", width: 1920, height: 1080, overflow: "hidden", fontFamily: FONT }}>
       <style>{`.promo-svg { width: 100%; height: 100%; display: block; } .promo-cover { }`}</style>
