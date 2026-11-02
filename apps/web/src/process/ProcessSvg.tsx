@@ -60,7 +60,7 @@ export function buildProcess(process: ProcessGraph, style: StyleDef, theme: Them
         const w = dir === "h" ? width - PAD - ln.x : ln.w;
         const h = dir === "v" ? height - PAD / 2 - ln.y : ln.h;
         return (
-          <g key={`lane${ln.idx}`}>
+          <g key={`lane${ln.idx}`} data-lane={ln.idx}>
             {p.rect(ln.x, ln.y, w, h, 12, { fill: p.sketchy ? "none" : tint(c, p.premium === "dark" ? 0.07 : 0.05), stroke: p.sketchy ? p.lineColor : tint(c, 0.3), sw: 1, on: "", onMuted: "", icon: "" })}
             {p.rect(hd.x, hd.y, hd.w, hd.h, 12, { ...p.spec("chip", c), filter: undefined })}
             <Text fit={head} x={hd.x + hd.w / 2} y={hd.y + hd.h / 2} valign="middle" color={p.spec("chip", c).on} weight={p.labelWeight} />
@@ -109,7 +109,7 @@ function drawEdge(p: Paint, e: PlacedEdge, i: number, ink: string): ReactNode {
   const label = e.label.trim();
   const lf = label ? p.fit(label, 120, 12, 2, 600, 10) : null;
   return (
-    <g key={`e${i}`}>
+    <g key={`e${i}`} data-edge={e.to} data-back={e.back ? 1 : 0}>
       {p.sketchy ? p.curve(d, ink, 1.8, `l${i}`) : <path d={d} fill="none" stroke={ink} strokeWidth={1.8} strokeLinejoin="round" strokeDasharray={e.back ? "6 5" : undefined} />}
       {arrow(p, end, prev, ink, `a${i}`)}
       {lf && e.labelAt && (
@@ -130,7 +130,7 @@ function drawNode(p: Paint, n: PlacedNode, c: string, ink: string, dir: Dir): Re
     // подпись: в «h» под кружком, в «v» справа — там, где нет стрелок
     const lf = p.fit(n.label, dir === "h" ? 120 : 110, 12, dir === "h" ? 2 : 3, p.labelWeight, 10);
     return (
-      <g key={n.id} data-node={n.id}>
+      <g key={n.id} data-node={n.id} data-rank={n.rank}>
         {p.circle(cx, cy, n.w / 2, sp)}
         {dir === "h" ? (
           <Text fit={lf} x={cx} y={n.y + n.h + 6} color={p.t.text} weight={p.labelWeight} />
@@ -150,7 +150,7 @@ function drawNode(p: Paint, n: PlacedNode, c: string, ink: string, dir: Dir): Re
     ];
     const lf = n.type === "decision" ? p.fit(n.label, 104, 13, 3, p.labelWeight, 11) : null;
     return (
-      <g key={n.id} data-node={n.id}>
+      <g key={n.id} data-node={n.id} data-rank={n.rank}>
         {!p.sketchy && <polygon points={dia.map((q) => q.join(",")).join(" ")} fill={p.t.bg} />}
         {p.poly(dia, sp)}
         {lf ? (
@@ -170,7 +170,7 @@ function drawNode(p: Paint, n: PlacedNode, c: string, ink: string, dir: Dir): Re
   const h = n.h - (doc ? 10 : 0);
   const docPath = `M${n.x},${n.y} H${n.x + n.w} V${n.y + h} C${n.x + n.w * 0.75},${n.y + h - 12} ${n.x + n.w * 0.6},${n.y + h + 16} ${n.x + n.w * 0.35},${n.y + h + 8} C${n.x + n.w * 0.2},${n.y + h + 3} ${n.x + n.w * 0.1},${n.y + h + 6} ${n.x},${n.y + h + 8} Z`;
   return (
-    <g key={n.id} data-node={n.id}>
+    <g key={n.id} data-node={n.id} data-rank={n.rank}>
       {!p.sketchy && !doc && <rect x={n.x} y={n.y} width={n.w} height={n.h} rx={p.r(12)} fill={p.t.bg} />}
       {doc ? p.path(docPath, sp, n.id, [n.x, n.y, 9]) : p.rect(n.x, n.y, n.w, n.h, 12, sp)}
       {!doc && p.rect(n.x, n.y + 10, 4, n.h - 20, 2, { fill: c, stroke: "none", sw: 0, on: "", onMuted: "", icon: "" })}

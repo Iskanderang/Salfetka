@@ -1,0 +1,807 @@
+{
+ "text": "Как запустить свой продукт с нуля.\n\nСначала исследуйте рынок: поговорите с 20 потенциальными клиентами и найдите их главную боль. Затем сделайте MVP за 2–4 недели — только ключевая функция, без лишнего. Найдите первых 10 платящих клиентов вручную. Соберите отзывы и улучшите продукт. И только после этого масштабируйтесь через маркетинг.",
+ "visual": {
+  "layouts": [
+   "roadmap",
+   "steps"
+  ],
+  "title": "Запуск продукта с нуля",
+  "items": [
+   {
+    "label": "Исследование рынка",
+    "text": "Поговорите с потенциальными клиентами и найдите их главную боль",
+    "value": "20",
+    "children": [],
+    "icon": "search",
+    "iconOptions": [
+     "search",
+     "user-search",
+     "user-round-search",
+     "search-code",
+     "search-check",
+     "search-x",
+     "search-slash",
+     "zoom-out"
+    ]
+   },
+   {
+    "label": "Создание MVP",
+    "text": "Сделайте только ключевую функцию, без лишнего",
+    "value": "2–4 недели",
+    "children": [],
+    "icon": "rocket",
+    "iconOptions": [
+     "rocket",
+     "milestone",
+     "target",
+     "circle-dashed",
+     "presentation",
+     "circle-dot",
+     "projector",
+     "message-square-share"
+    ]
+   },
+   {
+    "label": "Первые продажи",
+    "text": "Найдите первых платящих клиентов вручную",
+    "value": "10",
+    "children": [],
+    "icon": "hand-coins",
+    "iconOptions": [
+     "hand-coins",
+     "coins",
+     "bitcoin",
+     "badge-cent",
+     "hand-metal",
+     "badge-pound-sterling",
+     "pound-sterling",
+     "circle-dollar-sign"
+    ]
+   },
+   {
+    "label": "Сбор отзывов",
+    "text": "Соберите отзывы и улучшите продукт",
+    "value": "",
+    "children": [],
+    "icon": "message-square-text",
+    "iconOptions": [
+     "message-square-text",
+     "message-square-share",
+     "message-circle",
+     "message-square",
+     "message-circle-heart",
+     "message-square-dot",
+     "message-square-heart",
+     "messages-square"
+    ]
+   },
+   {
+    "label": "Масштабирование",
+    "text": "Масштабируйтесь через маркетинг",
+    "value": "",
+    "children": [],
+    "icon": "move-up",
+    "iconOptions": [
+     "move-up",
+     "arrow-up-narrow-wide",
+     "arrow-up-1-0",
+     "arrow-up-0-1",
+     "arrow-up-wide-narrow",
+     "arrow-up-from-line",
+     "calendar-arrow-up",
+     "arrow-big-up"
+    ]
+   }
+  ]
+ },
+ "process": {
+  "title": "Процесс закупки товаров",
+  "lanes": [
+   "Инициатор",
+   "Руководитель отдела",
+   "Финансовый директор",
+   "Отдел закупок",
+   "Юрист",
+   "Бухгалтерия",
+   "Склад"
+  ],
+  "nodes": [
+   {
+    "id": "n1",
+    "type": "start",
+    "label": "Создать заявку на закупку",
+    "lane": "Инициатор"
+   },
+   {
+    "id": "n2",
+    "type": "decision",
+    "label": "Сумма меньше 50 тысяч?",
+    "lane": "Инициатор"
+   },
+   {
+    "id": "n3",
+    "type": "task",
+    "label": "Согласовать заявку",
+    "lane": "Руководитель отдела"
+   },
+   {
+    "id": "n4",
+    "type": "task",
+    "label": "Согласовать заявку",
+    "lane": "Финансовый директор"
+   },
+   {
+    "id": "n5",
+    "type": "task",
+    "label": "Запросить предложения у поставщиков",
+    "lane": "Отдел закупок"
+   },
+   {
+    "id": "n6",
+    "type": "task",
+    "label": "Выбрать лучшее предложение",
+    "lane": "Отдел закупок"
+   },
+   {
+    "id": "n7",
+    "type": "document",
+    "label": "Заключить договор",
+    "lane": "Отдел закупок"
+   },
+   {
+    "id": "n8",
+    "type": "task",
+    "label": "Проверить договор",
+    "lane": "Юрист"
+   },
+   {
+    "id": "n9",
+    "type": "decision",
+    "label": "Есть замечания?",
+    "lane": "Юрист"
+   },
+   {
+    "id": "n10",
+    "type": "task",
+    "label": "Доработать договор",
+    "lane": "Отдел закупок"
+   },
+   {
+    "id": "n11",
+    "type": "task",
+    "label": "Оплатить счёт",
+    "lane": "Бухгалтерия"
+   },
+   {
+    "id": "n12",
+    "type": "task",
+    "label": "Принять товар",
+    "lane": "Склад"
+   },
+   {
+    "id": "n13",
+    "type": "end",
+    "label": "Товар принят",
+    "lane": "Склад"
+   }
+  ],
+  "edges": [
+   {
+    "from": "n1",
+    "to": "n2",
+    "label": ""
+   },
+   {
+    "from": "n2",
+    "to": "n3",
+    "label": "да"
+   },
+   {
+    "from": "n2",
+    "to": "n4",
+    "label": "нет"
+   },
+   {
+    "from": "n3",
+    "to": "n5",
+    "label": ""
+   },
+   {
+    "from": "n4",
+    "to": "n5",
+    "label": ""
+   },
+   {
+    "from": "n5",
+    "to": "n6",
+    "label": ""
+   },
+   {
+    "from": "n6",
+    "to": "n7",
+    "label": ""
+   },
+   {
+    "from": "n7",
+    "to": "n8",
+    "label": ""
+   },
+   {
+    "from": "n8",
+    "to": "n9",
+    "label": ""
+   },
+   {
+    "from": "n9",
+    "to": "n10",
+    "label": "да"
+   },
+   {
+    "from": "n10",
+    "to": "n8",
+    "label": "вернуть на доработку"
+   },
+   {
+    "from": "n9",
+    "to": "n11",
+    "label": "нет"
+   },
+   {
+    "from": "n11",
+    "to": "n12",
+    "label": ""
+   },
+   {
+    "from": "n12",
+    "to": "n13",
+    "label": ""
+   }
+  ]
+ },
+ "extra": {
+  "lock": {
+   "layouts": [
+    "lock",
+    "stats"
+   ],
+   "title": "Автоматизация отчётов в CRM",
+   "items": [
+    {
+     "label": "Проблема",
+     "text": "Менеджеры тратят 3 часа в день на ручные отчёты",
+     "value": "3 часа",
+     "children": [],
+     "icon": "calendar-clock",
+     "iconOptions": [
+      "calendar-clock",
+      "file-clock",
+      "clock",
+      "folder-clock",
+      "clock-12",
+      "clock-11",
+      "clock-2",
+      "clock-1"
+     ]
+    },
+    {
+     "label": "Решение",
+     "text": "Автоматическая выгрузка данных из CRM в дашборд",
+     "value": "",
+     "children": [
+      "Экономия 60 часов в месяц",
+      "Меньше ошибок",
+      "Отчёты в реальном времени"
+     ],
+     "icon": "layout-dashboard",
+     "iconOptions": [
+      "layout-dashboard",
+      "gauge",
+      "circle-gauge",
+      "flip-horizontal",
+      "flip-horizontal-2",
+      "layout-panel-left",
+      "arrow-big-left-dash",
+      "arrow-big-right-dash"
+     ]
+    }
+   ]
+  },
+  "glossary": {
+   "layouts": [
+    "glossary",
+    "cards"
+   ],
+   "title": "Основные термины маркетинга",
+   "items": [
+    {
+     "label": "Конверсия",
+     "text": "Доля посетителей, которые совершили целевое действие",
+     "value": "",
+     "children": [],
+     "icon": "arrow-up-to-line",
+     "iconOptions": [
+      "arrow-up-to-line",
+      "target",
+      "plus",
+      "diamond-plus",
+      "arrow-up-from-line",
+      "book-up-2",
+      "arrow-right-from-line",
+      "scan"
+     ]
+    },
+    {
+     "label": "CAC",
+     "text": "Стоимость привлечения одного клиента",
+     "value": "",
+     "children": [],
+     "icon": "user",
+     "iconOptions": [
+      "user",
+      "book-user",
+      "user-search",
+      "user-cog",
+      "user-round-search",
+      "user-plus",
+      "file-user",
+      "user-round-cog"
+     ]
+    },
+    {
+     "label": "LTV",
+     "text": "Сколько денег приносит клиент за всё время",
+     "value": "",
+     "children": [],
+     "icon": "currency",
+     "iconOptions": [
+      "currency",
+      "coins",
+      "euro",
+      "banknote",
+      "pound-sterling",
+      "bitcoin",
+      "dollar-sign",
+      "hand-coins"
+     ]
+    },
+    {
+     "label": "Retention",
+     "text": "Доля клиентов, которые возвращаются",
+     "value": "",
+     "children": [],
+     "icon": "corner-down-left",
+     "iconOptions": [
+      "corner-down-left",
+      "undo-2",
+      "user-round",
+      "user-round-check",
+      "user-round-search",
+      "user-round-plus",
+      "user-check",
+      "user"
+     ]
+    }
+   ]
+  },
+  "tree": {
+   "layouts": [
+    "tree",
+    "hub"
+   ],
+   "title": "Почему растут продажи",
+   "items": [
+    {
+     "label": "Сильная команда",
+     "text": "",
+     "value": "",
+     "children": [],
+     "icon": "users",
+     "iconOptions": [
+      "users",
+      "users-round",
+      "person-standing",
+      "goal",
+      "target",
+      "medal",
+      "party-popper",
+      "twitter"
+     ]
+    },
+    {
+     "label": "Понятный продукт",
+     "text": "",
+     "value": "",
+     "children": [],
+     "icon": "box",
+     "iconOptions": [
+      "box",
+      "package-search",
+      "scan-line",
+      "file-box",
+      "boxes",
+      "shopping-basket",
+      "scan-barcode",
+      "boom-box"
+     ]
+    },
+    {
+     "label": "Честные цены",
+     "text": "",
+     "value": "",
+     "children": [],
+     "icon": "badge-pound-sterling",
+     "iconOptions": [
+      "badge-pound-sterling",
+      "square-percent",
+      "badge-euro",
+      "badge-dollar-sign",
+      "badge-japanese-yen",
+      "badge-percent",
+      "diamond-percent",
+      "badge-cent"
+     ]
+    },
+    {
+     "label": "Постоянные клиенты",
+     "text": "",
+     "value": "",
+     "children": [],
+     "icon": "users-round",
+     "iconOptions": [
+      "users-round",
+      "users",
+      "user",
+      "book-user",
+      "square-user",
+      "user-round",
+      "circle-user-round",
+      "circle-user"
+     ]
+    },
+    {
+     "label": "Рост выручки",
+     "text": "",
+     "value": "40%",
+     "children": [],
+     "icon": "chart-column-increasing",
+     "iconOptions": [
+      "chart-column-increasing",
+      "chart-bar-increasing",
+      "file-chart-column-increasing",
+      "chart-no-axes-column-increasing",
+      "chart-spline",
+      "square-chart-gantt",
+      "chart-no-axes-combined",
+      "chart-candlestick"
+     ]
+    },
+    {
+     "label": "Хорошие отзывы",
+     "text": "",
+     "value": "",
+     "children": [],
+     "icon": "moon-star",
+     "iconOptions": [
+      "moon-star",
+      "star",
+      "star-off",
+      "star-half",
+      "sparkle",
+      "sparkles",
+      "message-square-heart",
+      "telescope"
+     ]
+    }
+   ]
+  },
+  "faq": {
+   "layouts": [
+    "faq"
+   ],
+   "title": "Частые вопросы",
+   "items": [
+    {
+     "label": "Сколько стоит подписка?",
+     "text": "Цена подписки",
+     "value": "990 рублей в месяц",
+     "children": [],
+     "icon": "badge-pound-sterling",
+     "iconOptions": [
+      "badge-pound-sterling",
+      "square-percent",
+      "badge-euro",
+      "badge-dollar-sign",
+      "badge-japanese-yen",
+      "badge-percent",
+      "diamond-percent",
+      "badge-cent"
+     ]
+    },
+    {
+     "label": "Можно ли отменить?",
+     "text": "Да, в любой момент в личном кабинете",
+     "value": "",
+     "children": [],
+     "icon": "ban",
+     "iconOptions": [
+      "ban",
+      "circle-x",
+      "user-round-minus",
+      "x",
+      "user-minus",
+      "search-slash",
+      "copy-x",
+      "refresh-cw-off"
+     ]
+    },
+    {
+     "label": "Есть ли пробный период?",
+     "text": "Да, можно попробовать бесплатно",
+     "value": "14 дней",
+     "children": [],
+     "icon": "gift",
+     "iconOptions": [
+      "gift",
+      "gem",
+      "calendar-clock",
+      "heart-handshake",
+      "clock-11",
+      "clock",
+      "clock-7",
+      "file-clock"
+     ]
+    },
+    {
+     "label": "Работает ли на телефоне?",
+     "text": "Да, есть приложения для iOS и Android",
+     "value": "",
+     "children": [],
+     "icon": "monitor-smartphone",
+     "iconOptions": [
+      "monitor-smartphone",
+      "smartphone",
+      "tablet-smartphone",
+      "smartphone-charging",
+      "smartphone-nfc",
+      "vibrate",
+      "vibrate-off",
+      "tablet"
+     ]
+    }
+   ]
+  },
+  "quote": {
+   "layouts": [
+    "quote",
+    "hierarchy"
+   ],
+   "title": "Создание будущего через действие",
+   "items": [
+    {
+     "label": "Цитата",
+     "text": "Лучший способ предсказать будущее — создать его",
+     "value": "",
+     "children": [],
+     "icon": "quote",
+     "iconOptions": [
+      "quote",
+      "text-quote",
+      "message-square-quote",
+      "eye",
+      "align-end-vertical",
+      "message-square-dashed",
+      "contrast",
+      "scan-eye"
+     ]
+    },
+    {
+     "label": "Автор",
+     "text": "Питер Друкер, отец современного менеджмента",
+     "value": "",
+     "children": [],
+     "icon": "person-standing",
+     "iconOptions": [
+      "person-standing",
+      "user",
+      "book-user",
+      "square-user",
+      "file-user",
+      "circle-user",
+      "user-round",
+      "circle-user-round"
+     ]
+    },
+    {
+     "label": "Главная мысль",
+     "text": "Планирование важнее прогнозов",
+     "value": "",
+     "children": [],
+     "icon": "square-chart-gantt",
+     "iconOptions": [
+      "square-chart-gantt",
+      "chart-no-axes-gantt",
+      "square-kanban",
+      "square-dashed-kanban",
+      "chart-gantt",
+      "kanban",
+      "route-off",
+      "presentation"
+     ]
+    },
+    {
+     "label": "Принцип действия",
+     "text": "Действие важнее ожидания",
+     "value": "",
+     "children": [],
+     "icon": "square-activity",
+     "iconOptions": [
+      "square-activity",
+      "activity",
+      "workflow",
+      "rocket",
+      "move-up",
+      "move-up-right",
+      "move",
+      "clapperboard"
+     ]
+    }
+   ]
+  },
+  "persona": {
+   "layouts": [
+    "persona"
+   ],
+   "title": "Портрет клиента: Анна",
+   "items": [
+    {
+     "label": "Анна",
+     "text": "Маркетолог в IT-компании, живет в Москве",
+     "value": "32 года",
+     "children": [],
+     "icon": "user",
+     "iconOptions": [
+      "user",
+      "square-user",
+      "user-round",
+      "book-user",
+      "circle-user",
+      "square-user-round",
+      "circle-user-round",
+      "user-pen"
+     ]
+    },
+    {
+     "label": "Цели",
+     "text": "Вырасти до руководителя, учиться новому",
+     "value": "",
+     "children": [],
+     "icon": "target",
+     "iconOptions": [
+      "target",
+      "crosshair",
+      "scan",
+      "diamond-plus",
+      "plus",
+      "square-chart-gantt",
+      "milestone",
+      "square-dashed-mouse-pointer"
+     ]
+    },
+    {
+     "label": "Боли",
+     "text": "Нет времени, много рутины",
+     "value": "",
+     "children": [],
+     "icon": "calendar-clock",
+     "iconOptions": [
+      "calendar-clock",
+      "clock-12",
+      "clock",
+      "clock-11",
+      "file-clock",
+      "clock-2",
+      "clock-1",
+      "folder-clock"
+     ]
+    },
+    {
+     "label": "Привычки",
+     "text": "Читает Telegram-каналы, слушает подкасты в дороге",
+     "value": "",
+     "children": [],
+     "icon": "monitor-smartphone",
+     "iconOptions": [
+      "monitor-smartphone",
+      "smartphone",
+      "tablet-smartphone",
+      "smartphone-charging",
+      "smartphone-nfc",
+      "vibrate",
+      "vibrate-off",
+      "headset"
+     ]
+    }
+   ]
+  },
+  "orgchart": {
+   "layouts": [
+    "orgchart"
+   ],
+   "title": "Структура компании",
+   "items": [
+    {
+     "label": "Иван Петров",
+     "text": "Генеральный директор",
+     "value": "",
+     "children": [
+      "отдел продаж",
+      "маркетинг",
+      "разработка"
+     ],
+     "icon": "building-2",
+     "iconOptions": [
+      "building-2",
+      "triangle",
+      "pyramid",
+      "circle-chevron-right",
+      "layout-dashboard",
+      "building",
+      "circle-chevron-up",
+      "landmark"
+     ]
+    },
+    {
+     "label": "отдел продаж",
+     "text": "Мария Смирнова, Олег Иванов",
+     "value": "",
+     "children": [],
+     "icon": "square-percent",
+     "iconOptions": [
+      "square-percent",
+      "badge-pound-sterling",
+      "badge-euro",
+      "scan-line",
+      "circle-percent",
+      "badge-percent",
+      "person-standing",
+      "badge-swiss-franc"
+     ]
+    },
+    {
+     "label": "маркетинг",
+     "text": "Анна Котова",
+     "value": "",
+     "children": [],
+     "icon": "megaphone",
+     "iconOptions": [
+      "megaphone",
+      "megaphone-off",
+      "badge-pound-sterling",
+      "square-percent",
+      "circle-percent",
+      "badge-percent",
+      "badge-euro",
+      "circle-dollar-sign"
+     ]
+    },
+    {
+     "label": "разработка",
+     "text": "Пётр Сидоров, Елена Орлова, Дмитрий Ким",
+     "value": "",
+     "children": [],
+     "icon": "folder-code",
+     "iconOptions": [
+      "folder-code",
+      "book-up",
+      "book-up-2",
+      "book-down",
+      "book-dashed",
+      "file-code",
+      "file-code-2",
+      "circle-dashed"
+     ]
+    }
+   ]
+  }
+ }
+}
