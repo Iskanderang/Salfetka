@@ -148,18 +148,18 @@ function Install() {
           Скачайте программу с <a href="https://lmstudio.ai" target="_blank" rel="noreferrer">lmstudio.ai</a>. Откройте поиск моделей (значок лупы слева), найдите модель из
           таблицы выше, например <code>gemma-4-12b</code>, и нажмите <b>Download</b>.
         </p>
-        <Shot src="lm-1-search.png" alt="Поиск модели в LM Studio" caption="Поиск модели и кнопка Download" />
+        <Shot src="lm-1-search.png" alt="Поиск модели в LM Studio" caption="Поиск «gemma»: справа выбор файла модели и кнопка Download (если модель уже скачана — Use in New Chat)" />
         <p>
           Так же найдите и скачайте <code>nomic-embed-text-v1.5</code> — маленькую модель для подбора иконок по смыслу.
         </p>
-        <Shot src="lm-2-models.png" alt="Скачанные модели в LM Studio" caption="Обе модели в списке «Мои модели»" />
+        <Shot src="lm-2-models.png" alt="Скачанные модели в LM Studio" caption="Окно выбора модели (Ctrl+L): сверху загруженная gemma-4-12b-qat, ниже — скачанные модели. Модель для иконок (nomic-embed) здесь не показывается — это нормально. Обычно start.bat загружает обе сам" />
       </Step>
       <Step n={3} title="Включите сервер в LM Studio">
         <p>
           Откройте вкладку <b>Developer</b> (значок консоли слева) и включите переключатель <b>Status: Running</b>. Адрес сервера — <code>http://localhost:1234</code>. Если в
           LM Studio включена консольная утилита <code>lms</code>, start.bat сделает это сам.
         </p>
-        <Shot src="lm-3-server.png" alt="Запущенный сервер в LM Studio" caption="Сервер запущен — Status: Running" />
+        <Shot src="lm-3-server.png" alt="Запущенный сервер в LM Studio" caption="Developer → Local Server: Status: Running, адрес http://127.0.0.1:1234, обе модели в статусе READY — Салфетка готова к работе" />
       </Step>
       <Step n={4} title="Запустите Салфетку">
         <p>
