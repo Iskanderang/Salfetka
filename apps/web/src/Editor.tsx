@@ -185,11 +185,11 @@ export function ItemEditor({ item, index, count, palette, autoColor, colorLocked
   );
 }
 
-export function TitleEditor({ title, onChange, onClose }: { title: string; onChange: (t: string) => void; onClose: () => void }) {
+export function TitleEditor({ title, onChange, onClose, heading = "Заголовок" }: { title: string; onChange: (t: string) => void; onClose: () => void; heading?: string }) {
   return (
     <div className="editor-pop">
       <div className="pop-head">
-        <b>Заголовок</b>
+        <b>{heading}</b>
         <button className="icon-btn" onClick={onClose}>
           <Ico name="x" size={18} />
         </button>

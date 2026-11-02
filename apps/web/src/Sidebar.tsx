@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { LAYOUT_LABELS, type Layout, type Visual } from "@napkin/shared";
+import { LAYOUT_LABELS, type Layout, type ProcessGraph, type Visual } from "@napkin/shared";
+import { ProcessSvg } from "./process/ProcessSvg";
 import { VisualSvg } from "./render/VisualSvg";
 import { THEMES, type Theme } from "./render/themes";
 import { STYLES, type StyleDef } from "./render/styles";
@@ -24,6 +25,9 @@ type Props = {
   onPalette: (id: string) => void;
   onLook: (l: Look) => void;
   lookExtra: { autoColor: string; colorIgnored: boolean; autoBg: string };
+  /** Режим «Процессы»: формы не нужны, миниатюры стилей — по процессу */
+  process?: ProcessGraph;
+  processDir?: "h" | "v";
 };
 
 const TABS: { id: SideTab; label: string }[] = [
@@ -59,7 +63,7 @@ export function Sidebar(p: Props) {
   return (
     <aside className="sidebar">
       <div className="side-tabs">
-        {TABS.map((t) => (
+        {TABS.filter((t) => !(p.process && t.id === "shape")).map((t) => (
           <button key={t.id} className={t.id === p.tab ? "active" : ""} onClick={() => p.onTab(t.id)}>
             {t.label}
           </button>
@@ -84,7 +88,7 @@ export function Sidebar(p: Props) {
       </div>
 
       <div className="side-body">
-        {p.tab === "shape" && (
+        {p.tab === "shape" && !p.process && (
           <>
             {p.recommended.length > 0 && (
               <section className="side-section">
@@ -112,7 +116,7 @@ export function Sidebar(p: Props) {
           </>
         )}
 
-        {p.tab === "style" && (
+        {(p.tab === "style" || (p.process && p.tab === "shape")) && (
           <>
             <section className="side-section">
               <div className="side-head">Стиль</div>
@@ -125,7 +129,11 @@ export function Sidebar(p: Props) {
                     title={s.hint}
                   >
                     <div className="shape-thumb">
-                      <VisualSvg visual={p.visual} layout={p.layout} theme={p.theme} style={s} look={p.look} className="svg-thumb" />
+                      {p.process ? (
+                        <ProcessSvg process={p.process} dir={p.processDir} theme={p.theme} style={s} look={p.look} className="svg-thumb" />
+                      ) : (
+                        <VisualSvg visual={p.visual} layout={p.layout} theme={p.theme} style={s} look={p.look} className="svg-thumb" />
+                      )}
                     </div>
                     <span>
                       {s.name} <small className="muted">· {s.hint}</small>

@@ -11,15 +11,19 @@ export const HELP_TABS: { id: HelpTab; label: string; icon: string }[] = [
   { id: "licenses", label: "Лицензии", icon: "scroll-text" },
 ];
 
-type Props = { tab: HelpTab; onTab: (t: HelpTab) => void; onClose: () => void };
+type Props = { tab: HelpTab; onTab: (t: HelpTab) => void; onClose: () => void; anchor?: string };
 
 /** Справка: установка на своём ПК, работа с сервисом, расширение, лицензии. */
-export function Help({ tab, onTab, onClose }: Props) {
+export function Help({ tab, onTab, onClose, anchor = "" }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
+  // открыли из подсказки «Процессы» — сразу к нужному разделу
+  useEffect(() => {
+    if (anchor) document.getElementById(`help-${anchor}`)?.scrollIntoView({ block: "start" });
+  }, [anchor, tab]);
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -320,6 +324,63 @@ function Usage() {
         </p>
         <Shot src="use-8-export.png" alt="Меню «Скачать»" narrow />
       </Step>
+
+      <div className="tip-box" id="help-processes">
+        <h3>
+          <Ico name="workflow" size={18} />
+          Процессы: как описать, чтобы схема получилась точной
+        </h3>
+        <p>
+          Переключите над текстом <b>«Процессы»</b> и опишите процесс словами. Модель найдёт шаги, исполнителей, проверки и возвраты и разложит схему по дорожкам —
+          как в Draw.io. Чем конкретнее описание, тем точнее схема:
+        </p>
+        <ul>
+          <li>
+            <b>Исполнители и их действия.</b> Кто что делает: «Менеджер проверяет заявку», «Бухгалтерия выставляет счёт». Каждый исполнитель станет своей дорожкой.
+          </li>
+          <li>
+            <b>Проверки и варианты.</b> «Если сумма больше 100 тысяч — согласует директор, если меньше — руководитель».
+          </li>
+          <li>
+            <b>Возвраты и одновременные действия.</b> «Юрист возвращает договор на доработку», «Одновременно склад собирает заказ, а менеджер готовит документы».
+          </li>
+          <li>
+            <b>Результат.</b> Чем процесс заканчивается: «Заказ оплачен», «Отказ клиенту», «Товар принят на склад».
+          </li>
+          <li>
+            <b>Размер.</b> До 15–20 шагов на схему. Большой процесс разбейте на этапы и нарисуйте каждый отдельно.
+          </li>
+        </ul>
+        <div className="tip-compare">
+          <div className="tip-bad">
+            <b>
+              <Ico name="x" size={14} /> Не так
+            </b>
+            <p>«Мы быстро и качественно обрабатываем заявки клиентов.» — нет ни шагов, ни исполнителей, ни проверок.</p>
+          </div>
+          <div className="tip-good">
+            <b>
+              <Ico name="check" size={14} /> А так
+            </b>
+            <p>
+              «Клиент оставляет заявку. Менеджер проверяет её. Если данных не хватает — запрашивает их у клиента. Если всё в порядке — бухгалтерия выставляет счёт,
+              клиент оплачивает. Заказ оплачен.»
+            </p>
+          </div>
+        </div>
+        <p className="tip-sub">Что дальше со схемой:</p>
+        <ul>
+          <li>
+            <b>Скачать:</b> PNG и SVG — для регламентов, инструкций и презентаций.
+          </li>
+          <li>
+            <b>Править дальше:</b> файл <b>.drawio</b> открывается в Draw.io (app.diagrams.net) — там можно двигать шаги, стрелки и дорожки.
+          </li>
+          <li>
+            <b>Ориентация:</b> над схемой переключатель «Слева направо / Сверху вниз». Клик по шагу — поправить его текст.
+          </li>
+        </ul>
+      </div>
 
       <p className="note">Схемы хранятся в этом браузере. Очистка данных браузера удалит и их.</p>
 

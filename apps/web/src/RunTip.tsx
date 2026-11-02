@@ -2,8 +2,8 @@ import { useCallback, useRef, useState } from "react";
 import { useDismiss } from "./useDismiss";
 import { Ico } from "./render/primitives";
 
-/** Значок-подсказка рядом с кнопкой «Визуализировать»: как подавать текст, чтобы схемы получались точными. */
-export function RunTip({ onMore }: { onMore: () => void }) {
+/** Значок-подсказка рядом с кнопкой запуска: как подавать текст, чтобы схема получилась точной. Для схем и для процессов — своя. */
+export function RunTip({ onMore, mode = "visual" }: { onMore: () => void; mode?: "visual" | "process" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -16,15 +16,36 @@ export function RunTip({ onMore }: { onMore: () => void }) {
       </button>
       {open && (
         <div className="run-tip-card" role="dialog" aria-label="Как подать текст">
-          <b className="run-tip-title">Один фрагмент — одна схема</b>
-          <ul>
-            <li>
-              Выделяйте <b>абзац, список или блок</b> на 3–8 пунктов, а не весь текст.
-            </li>
-            <li>Из длинного текста модель возьмёт только главное и потеряет детали.</li>
-            <li>Салфетка не собирает презентацию — она рисует ровно тот кусок, что вы дали.</li>
-          </ul>
-          <p className="run-tip-flow">Выделили → Визуализировать → следующий фрагмент</p>
+          {mode === "process" ? (
+            <>
+              <b className="run-tip-title">Как описать процесс</b>
+              <ul>
+                <li>
+                  <b>Кто и что делает:</b> назовите исполнителей и их действия — «Менеджер проверяет заявку». Из них получатся дорожки.
+                </li>
+                <li>
+                  <b>Проверки и варианты:</b> «если сумма больше 100 тыс. — согласует директор, иначе — руководитель».
+                </li>
+                <li>
+                  <b>Возвраты и результат:</b> «возвращает на доработку», «заказ оплачен», «отказ клиенту».
+                </li>
+                <li>До 15–20 шагов на схему — большой процесс разбейте на этапы.</li>
+              </ul>
+              <p className="run-tip-flow">Описали → Нарисовать процесс → скачать или править в Draw.io</p>
+            </>
+          ) : (
+            <>
+              <b className="run-tip-title">Один фрагмент — одна схема</b>
+              <ul>
+                <li>
+                  Выделяйте <b>абзац, список или блок</b> на 3–8 пунктов, а не весь текст.
+                </li>
+                <li>Из длинного текста модель возьмёт только главное и потеряет детали.</li>
+                <li>Салфетка не собирает презентацию — она рисует ровно тот кусок, что вы дали.</li>
+              </ul>
+              <p className="run-tip-flow">Выделили → Визуализировать → следующий фрагмент</p>
+            </>
+          )}
           <button
             className="link"
             onClick={() => {
@@ -32,7 +53,7 @@ export function RunTip({ onMore }: { onMore: () => void }) {
               onMore();
             }}
           >
-            Подробнее и примеры →
+            {mode === "process" ? "Подробнее и пример →" : "Подробнее и примеры →"}
           </button>
         </div>
       )}

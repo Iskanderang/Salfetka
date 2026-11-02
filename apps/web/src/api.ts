@@ -1,4 +1,4 @@
-import { AI_HEADERS, type AiSettings, type HealthResponse, type IconSearchResponse, type ModelsResponse, type ProviderInfo, type VisualizeResponse } from "@napkin/shared";
+import { AI_HEADERS, type AiSettings, type HealthResponse, type IconSearchResponse, type ModelsResponse, type ProcessResponse, type ProviderInfo, type VisualizeResponse } from "@napkin/shared";
 
 /** Выбор нейросети уходит с каждым запросом заголовками — сервер собирает клиент под него. */
 let aiHeaders: Record<string, string> = {};
@@ -20,6 +20,13 @@ export async function visualize(text: string, variant: boolean, signal?: AbortSi
     body: JSON.stringify({ text, variant }),
     signal,
   });
+  const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+  if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`);
+  return j;
+}
+
+export async function processText(text: string, signal?: AbortSignal): Promise<ProcessResponse> {
+  const r = await fetch("/api/process", { method: "POST", headers: { ...json, ...aiHeaders }, body: JSON.stringify({ text }), signal });
   const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
   if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`);
   return j;

@@ -234,3 +234,38 @@ export type ModelsResponse = {
 
 /** Заголовки, в которых браузер передаёт выбор нейросети API-серверу. */
 export const AI_HEADERS = { provider: "x-ai-provider", key: "x-ai-key", model: "x-ai-model" } as const;
+
+// ─── Бизнес-процессы: граф «узлы + связи + дорожки» ───────────
+
+export const PROCESS_NODE_TYPES = ["start", "task", "decision", "parallel", "document", "end"] as const;
+export type ProcessNodeType = (typeof PROCESS_NODE_TYPES)[number];
+
+export const LlmProcessSchema = z.object({
+  title: z.string().describe("Название процесса, до 6 слов"),
+  lanes: z.array(z.string()).max(8).describe("Исполнители (роли, отделы) в порядке появления; [] если в тексте их нет"),
+  nodes: z
+    .array(
+      z.object({
+        id: z.string().describe("Короткий id: n1, n2, …"),
+        type: z.enum(PROCESS_NODE_TYPES).describe("start — начало, task — действие, decision — проверка с вариантами, parallel — разветвление на одновременные действия, document — документ, end — завершение"),
+        label: z.string().describe("Действие глаголом или вопрос, 2–6 слов, из текста"),
+        lane: z.string().describe("Исполнитель из lanes; пустая строка, если lanes пуст"),
+      }),
+    )
+    .min(2)
+    .max(30),
+  edges: z
+    .array(
+      z.object({
+        from: z.string(),
+        to: z.string(),
+        label: z.string().describe("Для выходов из decision — «да», «нет» или условие; иначе пустая строка"),
+      }),
+    )
+    .max(45),
+});
+export type LlmProcess = z.infer<typeof LlmProcessSchema>;
+export type ProcessGraph = LlmProcess;
+export type ProcessNode = ProcessGraph["nodes"][number];
+export type ProcessEdge = ProcessGraph["edges"][number];
+export type ProcessResponse = { process: ProcessGraph; ms: number; model: string; fixes: string[] };

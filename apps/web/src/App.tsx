@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { LAYOUTS, LAYOUT_LABELS, PROVIDER_IDS, type AiSettings, type HealthResponse, type Item, type Layout, type ProviderInfo, type Visual } from "@napkin/shared";
-import { health, providers as fetchProviders, setAiSettings, visualize } from "./api";
+import { health, processText, providers as fetchProviders, setAiSettings, visualize } from "./api";
+import { ProcessPane, type ProcDoc } from "./process/ProcessPane";
 import { AiDialog } from "./AiDialog";
 import { VisualSvg } from "./render/VisualSvg";
 import { THEMES } from "./render/themes";
@@ -29,6 +30,7 @@ type Doc = { id: string; visual: Visual; layout: Layout; source: string; at: num
 
 /** Этапы работы модели для экрана ожидания (реальный ответ приходит одним запросом — этапы идут по таймеру). */
 const STAGES = ["Читаю текст", "Выбираю форму", "Подбираю иконки", "Рисую схему"];
+const PROC_STAGES = ["Читаю текст", "Нахожу шаги и исполнителей", "Связываю развилки", "Раскладываю схему"];
 type Pop = { kind: "item"; index: number; x: number; y: number } | { kind: "title"; x: number; y: number } | null;
 
 function useLocal<T>(key: string, init: T, fix: (v: T) => T = (v) => v) {
@@ -66,6 +68,11 @@ export function App() {
   const [history, setHistory] = useLocal<Doc[]>("nf.history", [], fixHistory);
   const [look, setLook] = useLocal<Look>("nf.look", DEFAULT_LOOK, (l) => ({ ...DEFAULT_LOOK, ...l }));
   const [current, setCurrent] = useState<Doc | null>(history[0] ?? null);
+  // режим «Процессы»: свой список схем и своя история
+  const [mode, setMode] = useLocal<"visual" | "process">("nf.mode", "visual");
+  const [procHistory, setProcHistory] = useLocal<ProcDoc[]>("nf.procHistory", [], (d) => d.filter((x) => x?.process?.nodes));
+  const [procCurrent, setProcCurrent] = useState<ProcDoc | null>(procHistory[0] ?? null);
+  const isProc = mode === "process";
   const [sel, setSel] = useState<[number, number]>([0, 0]);
   const [loading, setLoading] = useState<"" | "new" | "variant">("");
   const [error, setError] = useState("");
@@ -76,6 +83,8 @@ export function App() {
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [help, setHelp] = useState<HelpTab | null>(null);
+  // куда прокрутить справку при открытии (раздел про процессы)
+  const [helpAnchor, setHelpAnchor] = useState("");
   const [ai, setAi] = useLocal<AiSettings>("nf.ai", { provider: "local", keys: {}, models: {} }, (a) => ({
     provider: PROVIDER_IDS.includes(a.provider) ? a.provider : "local",
     keys: a.keys ?? {},
@@ -92,7 +101,7 @@ export function App() {
     if (!loading) return setStage(0);
     setStage(0);
     // последний этап держим, пока модель не ответит
-    const id = setInterval(() => setStage((st) => Math.min(STAGES.length - 1, st + 1)), 1500);
+    const id = setInterval(() => setStage((st) => Math.min(STAGES.length - 1, st + 1)), mode === "process" ? 3500 : 1500);
     return () => clearInterval(id);
   }, [loading]);
   const [uiTheme, setUiTheme] = useLocal<"light" | "dark">("nf.uiTheme", initialUiTheme());
@@ -143,7 +152,28 @@ export function App() {
     return () => clearTimeout(id);
   }, [toast]);
 
+  async function runProcess() {
+    if (!source || loading) return;
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    setLoading("new");
+    setError("");
+    try {
+      const res = await processText(source, ac.signal);
+      const doc: ProcDoc = { id: crypto.randomUUID(), process: res.process, source, at: Date.now() };
+      setProcCurrent(doc);
+      setProcHistory((h) => [doc, ...h].slice(0, 30));
+      setLastMs(res.ms);
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setError((e as Error).message);
+    } finally {
+      setLoading("");
+    }
+  }
+
   async function run(variant = false) {
+    if (mode === "process") return runProcess();
     const src = variant ? current?.source : source;
     if (!src || loading) return;
     abortRef.current?.abort();
@@ -269,7 +299,9 @@ export function App() {
   }
 
   const recommended = current?.visual.layouts ?? [];
-  const paint = current ? new Paint(style, theme, current.visual, look) : null;
+  // в режиме «Процессы» обычной схемы может не быть — панели оформления хватает пустой
+  const sideVisual: Visual = current?.visual ?? { layouts: [], title: "", items: [] };
+  const paint = current || procCurrent ? new Paint(style, theme, sideVisual, look) : null;
   const shownLayout = current?.layout ?? "steps";
   const shownStyle = style;
 
@@ -314,7 +346,7 @@ export function App() {
         </div>
       </header>
 
-      <main className={`workspace ${leftCollapsed ? "left-collapsed" : ""} ${sideOpen ? "side-open" : ""} ${current ? "" : "no-side"}`}>
+      <main className={`workspace ${leftCollapsed ? "left-collapsed" : ""} ${sideOpen ? "side-open" : ""} ${(isProc ? procCurrent : current) ? "" : "no-side"}`}>
         {leftCollapsed ? (
           <section className="pane editor collapsed">
             <button className="icon-btn" onClick={() => setLeftCollapsed(false)} title="Показать текст">
@@ -327,6 +359,16 @@ export function App() {
           </section>
         ) : (
           <section className="pane editor">
+            <div className="mode-tabs" role="tablist" aria-label="Что рисуем">
+              <button role="tab" aria-selected={!isProc} className={!isProc ? "active" : ""} onClick={() => setMode("visual")}>
+                <Ico name="layout-grid" size={16} />
+                Схемы
+              </button>
+              <button role="tab" aria-selected={isProc} className={isProc ? "active" : ""} onClick={() => setMode("process")}>
+                <Ico name="workflow" size={16} />
+                Процессы
+              </button>
+            </div>
             <div className="editor-head">
               <span>Текст</span>
               <div className="editor-tools">
@@ -350,7 +392,11 @@ export function App() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) run();
               }}
-              placeholder="Вставьте текст, выделите фрагмент и нажмите «Визуализировать»"
+              placeholder={
+                isProc
+                  ? "Опишите процесс по шагам: кто что делает и что бывает, если… Например: «Менеджер проверяет заявку. Если данных не хватает — запрашивает у клиента…»"
+                  : "Вставьте текст, выделите фрагмент и нажмите «Визуализировать»"
+              }
               spellCheck={false}
             />
             <div className="editor-bar">
@@ -361,11 +407,33 @@ export function App() {
                 title={selected ? "Визуализировать выделенный фрагмент (Ctrl+Enter)" : "Визуализировать весь текст (Ctrl+Enter)"}
               >
                 {loading === "new" ? <span className="spinner small" /> : <Ico name="sparkles" />}
-                {loading === "new" ? "Создаю схему…" : "Визуализировать"}
+                {loading === "new" ? (isProc ? "Рисую процесс…" : "Создаю схему…") : isProc ? "Нарисовать процесс" : "Визуализировать"}
               </button>
-              <RunTip onMore={() => setHelp("usage")} />
+              <RunTip
+                mode={mode}
+                onMore={() => {
+                  setHelpAnchor(isProc ? "processes" : "");
+                  setHelp("usage");
+                }}
+              />
             </div>
-          {history.length > 0 && (
+          {isProc && procHistory.length > 0 && (
+            <div className="history">
+              <div className="history-head">
+                <span>Процессы</span>
+                <button className="link" onClick={() => setProcHistory([])}>
+                  очистить
+                </button>
+              </div>
+              {procHistory.map((d) => (
+                <button key={d.id} className={`history-item ${procCurrent?.id === d.id ? "active" : ""}`} onClick={() => setProcCurrent(d)}>
+                  <span>{d.process.title}</span>
+                  <small>{d.process.nodes.length} шагов</small>
+                </button>
+              ))}
+            </div>
+          )}
+          {!isProc && history.length > 0 && (
             <div className="history">
               <div className="history-head">
                 <span>История</span>
@@ -421,7 +489,17 @@ export function App() {
               <span>{error}</span>
             </div>
           )}
-          {!current && !loading && (
+          {isProc && !procCurrent && !loading && (
+            <div className="empty">
+              <Logo size={150} />
+              <h2>Нарисуйте процесс</h2>
+              <p className="muted">
+                Опишите процесс словами: кто что делает, какие бывают проверки и возвраты. Модель найдёт шаги, исполнителей и развилки и разложит схему по дорожкам — как в
+                Draw.io. Готовую схему можно скачать в .drawio и править дальше.
+              </p>
+            </div>
+          )}
+          {!isProc && !current && !loading && (
             <div className="empty">
               <Logo size={150} />
               <h2>Превратите текст в схему</h2>
@@ -432,7 +510,7 @@ export function App() {
             <div className="loading">
               <div className="spinner" />
               <div className="stages">
-                {STAGES.map((st, i) => (
+                {(isProc ? PROC_STAGES : STAGES).map((st, i) => (
                   <span key={st} className={`stage ${i < stage ? "done" : i === stage ? "now" : ""}`}>
                     {i < stage && <Ico name="check" size={12} />}
                     {st}
@@ -441,7 +519,29 @@ export function App() {
               </div>
             </div>
           )}
-          {current && paint && (
+          {isProc && procCurrent && !loading && (
+            <ProcessPane
+              doc={procCurrent}
+              theme={theme}
+              style={style}
+              look={look}
+              lastMs={lastMs}
+              onChange={(process) => {
+                const next = { ...procCurrent, process };
+                setProcCurrent(next);
+                setProcHistory((h) => h.map((d) => (d.id === next.id ? next : d)));
+              }}
+              onDir={(dir) => {
+                const next = { ...procCurrent, dir };
+                setProcCurrent(next);
+                setProcHistory((h) => h.map((d) => (d.id === next.id ? next : d)));
+              }}
+              onError={setError}
+              onToast={setToast}
+              onOpenSide={() => setSideOpen(true)}
+            />
+          )}
+          {!isProc && current && paint && (
             <>
               <div className="toolbar">
                 <button className="side-toggle" onClick={() => setSideOpen(true)}>
@@ -543,12 +643,14 @@ export function App() {
           )}
         </section>
 
-        {current && paint && (
+        {(isProc ? procCurrent : current) && paint && (
           <Sidebar
+            process={isProc ? procCurrent?.process : undefined}
+            processDir={procCurrent?.dir}
             tab={sideTab}
             onTab={setSideTab}
-            visual={current.visual}
-            layout={current.layout}
+            visual={sideVisual}
+            layout={current?.layout ?? "steps"}
             recommended={recommended}
             theme={theme}
             style={style}
@@ -564,14 +666,14 @@ export function App() {
             lookExtra={{
               autoColor: paint.base.text,
               colorIgnored: !!look.color && !paint.textColorApplied,
-              autoBg: new Paint(style, theme, current.visual, { ...look, bg: undefined }).base.bg,
+              autoBg: new Paint(style, theme, sideVisual, { ...look, bg: undefined }).base.bg,
             }}
           />
         )}
         {sideOpen && <div className="side-backdrop" onClick={() => setSideOpen(false)} />}
       </main>
       {toast && <div className="toast">{toast}</div>}
-      {help && <Help tab={help} onTab={setHelp} onClose={() => setHelp(null)} />}
+      {help && <Help tab={help} anchor={helpAnchor} onTab={setHelp} onClose={() => { setHelp(null); setHelpAnchor(""); }} />}
       {aiOpen && (
         <AiDialog
           settings={ai}

@@ -78,7 +78,7 @@ function withHint(messages: OpenAI.ChatCompletionMessageParam[], schema: object)
 }
 
 /** Запрос с JSON-ответом: при отказе «400» переходим к следующему, более простому режиму. */
-async function jsonCompletion(ctx: AiCtx, call: JsonCall): Promise<string> {
+export async function jsonCompletion(ctx: AiCtx, call: JsonCall): Promise<string> {
   const { content } = await jsonCompletionWithMode(ctx, call);
   return content;
 }

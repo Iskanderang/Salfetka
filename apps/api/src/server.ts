@@ -1,7 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import type { HealthResponse, IconSearchRequest, ModelsResponse, Visual, VisualizeRequest, VisualizeResponse } from "@napkin/shared";
+import type { HealthResponse, IconSearchRequest, ModelsResponse, ProcessResponse, Visual, VisualizeRequest, VisualizeResponse } from "@napkin/shared";
 import { textToVisual, checkModel, listModels, probe } from "./llm.js";
+import { repairProcess, textToProcess } from "./process.js";
 import { buildIndex, iconStatus, resolveIcons, searchIcons } from "./icons.js";
 import { friendlyError, providerList, resolveCtx } from "./providers.js";
 
@@ -66,6 +67,23 @@ app.post<{ Body: VisualizeRequest }>("/api/visualize", async (req, reply) => {
       items: llm.items.map(({ keywords: _k, ...it }, i) => ({ ...it, icon: icons[i].icon, iconOptions: icons[i].options })),
     };
     const res: VisualizeResponse = { visual, ms: Date.now() - started, model: ctx.model };
+    return res;
+  } catch (e) {
+    req.log.error({ err: (e as Error).message, provider: ctx.def.id, model: ctx.model });
+    return reply.code(502).send({ error: friendlyError(e, ctx) });
+  }
+});
+
+app.post<{ Body: VisualizeRequest }>("/api/process", async (req, reply) => {
+  const ctx = resolveCtx(req.headers);
+  const text = req.body?.text?.trim();
+  if (!text) return reply.code(400).send({ error: "Пустой текст" });
+  if (text.length > 6000) return reply.code(400).send({ error: "Текст длиннее 6000 символов — разбейте процесс на части" });
+  const started = Date.now();
+  try {
+    const { process, fixes } = repairProcess(await textToProcess(ctx, text));
+    if (fixes.length) req.log.info({ fixes }, "процесс исправлен");
+    const res: ProcessResponse = { process, fixes, ms: Date.now() - started, model: ctx.model };
     return res;
   } catch (e) {
     req.log.error({ err: (e as Error).message, provider: ctx.def.id, model: ctx.model });
