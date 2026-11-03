@@ -486,3 +486,24 @@ button.icon-btn.channel-btn:hover:not(:disabled), button.icon-btn.channel-btn.ac
 .dir-switch { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
 .dir-switch button { display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: none; border-radius: 7px; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .dir-switch button.active { background: var(--surface); color: var(--text-strong); box-shadow: var(--shadow-sm); }
+
+/* версия в шапке и окно «Что нового» */
+.version-badge { align-self: flex-start; margin: 6px 0 0 -4px; padding: 2px 8px; height: auto; min-height: 0; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em; }
+.version-badge:hover { color: var(--primary); border-color: var(--primary); }
+.whats-new { width: min(560px, 100%); }
+.wn-head { display: flex; align-items: center; gap: 16px; padding: 22px 24px 14px; position: relative; }
+.wn-head h2 { margin: 0 0 2px; font-size: 22px; color: var(--text-strong); }
+.wn-head p { margin: 0; font-size: 14px; }
+.wn-close { position: absolute; top: 14px; right: 14px; }
+.wn-body { padding: 4px 24px 8px; overflow: auto; }
+.wn-release { padding: 14px 0; border-top: 1px solid var(--border); }
+.wn-ver { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 8px; }
+.wn-ver b { font-size: 16px; color: var(--text-strong); }
+.wn-badge { padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--primary); font-size: 12px; font-weight: 800; }
+.wn-release ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.wn-release li { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: var(--text); }
+.wn-release li .ui-ico { color: var(--primary); flex: none; margin-top: 3px; }
+.wn-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 24px 20px; border-top: 1px solid var(--border); }
+.wn-channel { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); text-decoration: none; }
+.wn-channel:hover { color: var(--primary); }
+.wn-channel .tg-ico { color: #229ED9; }

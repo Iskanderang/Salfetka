@@ -14,6 +14,8 @@ import { Sidebar, type SideTab } from "./Sidebar";
 import { Logo } from "./Logo";
 import { RunTip } from "./RunTip";
 import { ChannelTip } from "./ChannelTip";
+import { WhatsNew, pendingReleases } from "./WhatsNew";
+import { CHANGELOG, VERSION, type Release } from "./changelog";
 import { Ico } from "./render/primitives";
 import { initialUiTheme } from "./uiTheme";
 import { Help, HELP_TABS, type HelpTab } from "./Help";
@@ -83,6 +85,11 @@ export function App() {
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [help, setHelp] = useState<HelpTab | null>(null);
+  // окно «Салфетка обновилась»: после обновления — что вышло с прошлого раза; по клику на версию — весь список
+  const [news, setNews] = useState<{ releases: Release[]; updated: boolean } | null>(() => {
+    const list = pendingReleases();
+    return list ? { releases: list, updated: true } : null;
+  });
   // куда прокрутить справку при открытии (раздел про процессы)
   const [helpAnchor, setHelpAnchor] = useState("");
   const [ai, setAi] = useLocal<AiSettings>("nf.ai", { provider: "local", keys: {}, models: {} }, (a) => ({
@@ -311,6 +318,9 @@ export function App() {
         <div className="logo">
           <Logo size={60} />
           <span className="wordmark">Салфетка</span>
+          <button className="version-badge" onClick={() => setNews({ releases: CHANGELOG, updated: false })} title="Что нового">
+            v{VERSION}
+          </button>
         </div>
         <button
           className={`ai-btn ${ai.provider === "local" ? "" : "cloud"}`}
@@ -673,6 +683,7 @@ export function App() {
         {sideOpen && <div className="side-backdrop" onClick={() => setSideOpen(false)} />}
       </main>
       {toast && <div className="toast">{toast}</div>}
+      {news && <WhatsNew releases={news.releases} updated={news.updated} onClose={() => setNews(null)} />}
       {help && <Help tab={help} anchor={helpAnchor} onTab={setHelp} onClose={() => { setHelp(null); setHelpAnchor(""); }} />}
       {aiOpen && (
         <AiDialog

@@ -1,7 +1,15 @@
 @echo off
 chcp 65001 >nul
-setlocal
 cd /d "%~dp0"
+rem ─── Автообновление ─────────────────────────────────────────
+rem Сначала - до setlocal, чтобы переменные дожили до свежего start.bat.
+rem Обновляет копия скрипта во временной папке: если git pull поменяет этот файл,
+rem работающая копия не собьётся. Потом она сама запустит start.bat заново.
+if not defined NF_STAGE (
+  set "NF_STAGE=1"
+  copy /y "scripts\update.bat" "%TEMP%\salfetka-update.bat" >nul 2>nul && "%TEMP%\salfetka-update.bat" "%~dp0."
+)
+setlocal
 title Салфетка - превращаем текст в схемы
 
 rem ─── Настройки ──────────────────────────────────────────────
@@ -36,21 +44,37 @@ echo    и открою сервис в браузере. Займёт от 10 �
 echo.
 
 rem ─── 1. Node.js ─────────────────────────────────────────────
-echo %CY%[1/5]%N% %B%Ищу Node.js%N% - движок, на котором крутится сайт...
+echo %CY%[1/6]%N% %B%Ищу Node.js%N% - движок, на котором крутится сайт...
 where node >nul 2>nul || goto :no_node
 for /f "delims=" %%v in ('node -v') do set "NODEV=%%v"
 echo       %GR%✓%N% Нашёлся, версия %NODEV%. Живой, тёплый, дышит.
 echo.
 
-rem ─── 2. LM Studio ───────────────────────────────────────────
-echo %CY%[2/5]%N% %B%Стучусь в LM Studio%N% - там живёт нейросеть...
+rem ─── 2. Обновления ──────────────────────────────────────────
+echo %CY%[2/6]%N% %B%Проверяю обновления%N%...
+if "%NF_UPDATED%"=="new" goto :upd_new
+if "%NF_UPDATED%"=="newdeps" goto :upd_deps
+if "%NF_UPDATED%"=="same" echo       %GR%✓%N% У вас последняя версия. Свежая, как утренняя салфетка.
+if "%NF_UPDATED%"=="fail" echo       %YE%!%N% Не получилось обновиться: нет интернета или файлы меняли вручную. Работаю на текущей версии.
+if "%NF_UPDATED%"=="skip" echo       %DIM%Автообновление работает, если Салфетка скачана через git clone. Сейчас пропускаю.%N%
+if "%NF_UPDATED%"=="" echo       %DIM%Пропускаю.%N%
+goto :upd_done
+:upd_deps
+set "FORCE_NPM=1"
+:upd_new
+echo       %GR%✓%N% Скачал новую версию Салфетки! Что нового - покажу в браузере.
+:upd_done
+echo.
+
+rem ─── 3. LM Studio ───────────────────────────────────────────
+echo %CY%[3/6]%N% %B%Стучусь в LM Studio%N% - там живёт нейросеть...
 where lms >nul 2>nul || goto :no_lms
 lms server start >nul 2>nul
 echo       %GR%✓%N% Сервер нейросети на порту 1234. Проснулся, ворчит, но работает.
 echo.
 
-rem ─── 3. Модель ──────────────────────────────────────────────
-echo %CY%[3/5]%N% %B%Проверяю, загружена ли модель%N% %DIM%%MODEL%%N%
+rem ─── 4. Модель ──────────────────────────────────────────────
+echo %CY%[4/6]%N% %B%Проверяю, загружена ли модель%N% %DIM%%MODEL%%N%
 lms ps 2>nul | findstr /i /c:"%MODEL%" >nul && goto :model_ready
 echo       Модель спит. Заливаю ~7 ГБ мозгов в видеокарту.
 echo       %DIM%Видеокарта слегка нервничает, вентиляторы делают вид, что всё под контролем.%N%
@@ -89,12 +113,19 @@ echo         Список моделей: %B%lms ls%N%. Имя поменяйт�
 echo         Продолжаю, но без модели схемы рисоваться не будут.
 echo.
 
-rem ─── 4. Зависимости ─────────────────────────────────────────
+rem ─── 5. Зависимости ─────────────────────────────────────────
 :deps
-echo %CY%[4/5]%N% %B%Проверяю библиотеки проекта%N%...
+echo %CY%[5/6]%N% %B%Проверяю библиотеки проекта%N%...
+if defined FORCE_NPM goto :deps_update
 if exist node_modules goto :deps_ok
 echo       Первый запуск: скачиваю половину интернета %DIM%(для Node.js это нормально)%N%.
 echo       %DIM%Минута-две. Можно сделать чай. Или сложить салфетку - мы же Салфетка.%N%
+echo.
+call npm install
+if errorlevel 1 goto :npm_fail
+goto :deps_ok
+:deps_update
+echo       В новой версии поменялись библиотеки - докачиваю %DIM%(обычно меньше минуты)%N%.
 echo.
 call npm install
 if errorlevel 1 goto :npm_fail
@@ -102,8 +133,8 @@ if errorlevel 1 goto :npm_fail
 echo       %GR%✓%N% Всё на месте, ничего не потерялось.
 echo.
 
-rem ─── 5. Запуск ──────────────────────────────────────────────
-echo %CY%[5/5]%N% %B%Запускаю сервис%N%...
+rem ─── 6. Запуск ──────────────────────────────────────────────
+echo %CY%[6/6]%N% %B%Запускаю сервис%N%...
 netstat -ano | findstr /r /c:":%WEB_PORT% .*LISTENING" >nul && goto :already
 
 set /a R=%RANDOM% %% 10
