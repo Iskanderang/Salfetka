@@ -70,7 +70,7 @@ npm run dev
 Салфетка обновляется сама при каждом запуске `start.bat`, если она скачана через git:
 
 ```bash
-git clone https://github.com/ЛОГИН/salfetka.git
+git clone https://github.com/Iskanderang/Salfetka.git
 ```
 
 Перед стартом `start.bat` забирает новую версию (`git pull`), при необходимости докачивает библиотеки,
