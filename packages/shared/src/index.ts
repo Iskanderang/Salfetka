@@ -269,3 +269,11 @@ export type ProcessGraph = LlmProcess;
 export type ProcessNode = ProcessGraph["nodes"][number];
 export type ProcessEdge = ProcessGraph["edges"][number];
 export type ProcessResponse = { process: ProcessGraph; ms: number; model: string; fixes: string[] };
+
+// ─── Сколько текста за раз уходит в модель ───────────────────
+/**
+ * У модели окно контекста 8 192 токена: туда должны влезть инструкция, текст и ответ.
+ * Русский текст — примерно 1 токен на 3 символа. 4 000 символов (полторы-две страницы) — безопасный предел для схемы,
+ * у процессов инструкция короче, а ответ длиннее — 6 000. Больше — модель теряет детали или обрезает ответ.
+ */
+export const TEXT_LIMITS = { visual: 4000, process: 6000 } as const;

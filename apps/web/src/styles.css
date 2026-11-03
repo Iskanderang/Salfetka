@@ -507,3 +507,11 @@ button.icon-btn.channel-btn:hover:not(:disabled), button.icon-btn.channel-btn.ac
 .wn-channel { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); text-decoration: none; }
 .wn-channel:hover { color: var(--primary); }
 .wn-channel .tg-ico { color: #229ED9; }
+
+/* сколько символов уйдёт в модель */
+.limit-line { display: flex; align-items: flex-start; gap: 6px; padding: 0 16px 12px; margin-top: -4px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.limit-line b { font-weight: 700; color: var(--text); }
+.limit-line.warn, .limit-line.warn b { color: var(--warn); }
+.limit-line.over { color: var(--bad); }
+.limit-line.over b { color: var(--bad); }
+.limit-line .ui-ico { flex: none; margin-top: 1px; }

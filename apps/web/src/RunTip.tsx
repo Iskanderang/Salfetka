@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useDismiss } from "./useDismiss";
+import { TEXT_LIMITS } from "@napkin/shared";
 import { Ico } from "./render/primitives";
 
 /** Значок-подсказка рядом с кнопкой запуска: как подавать текст, чтобы схема получилась точной. Для схем и для процессов — своя. */
@@ -29,7 +30,9 @@ export function RunTip({ onMore, mode = "visual" }: { onMore: () => void; mode?:
                 <li>
                   <b>Возвраты и результат:</b> «возвращает на доработку», «заказ оплачен», «отказ клиенту».
                 </li>
-                <li>До 15–20 шагов на схему — большой процесс разбейте на этапы.</li>
+                <li>
+                  До 15–20 шагов и <b>до {TEXT_LIMITS.process.toLocaleString("ru-RU")} символов</b> за раз — большой процесс разбейте на этапы. Счётчик — под кнопкой.
+                </li>
               </ul>
               <p className="run-tip-flow">Описали → Нарисовать процесс → скачать или править в Draw.io</p>
             </>
@@ -42,6 +45,9 @@ export function RunTip({ onMore, mode = "visual" }: { onMore: () => void; mode?:
                 </li>
                 <li>Из длинного текста модель возьмёт только главное и потеряет детали.</li>
                 <li>Салфетка не собирает презентацию — она рисует ровно тот кусок, что вы дали.</li>
+                <li>
+                  За раз — <b>до {TEXT_LIMITS.visual.toLocaleString("ru-RU")} символов</b>, это полторы-две страницы. Счётчик — под кнопкой.
+                </li>
               </ul>
               <p className="run-tip-flow">Выделили → Визуализировать → следующий фрагмент</p>
             </>

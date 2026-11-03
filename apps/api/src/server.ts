@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import { TEXT_LIMITS } from "@napkin/shared";
 import type { HealthResponse, IconSearchRequest, ModelsResponse, ProcessResponse, Visual, VisualizeRequest, VisualizeResponse } from "@napkin/shared";
 import { textToVisual, checkModel, listModels, probe } from "./llm.js";
 import { repairProcess, textToProcess } from "./process.js";
@@ -56,7 +57,8 @@ app.post<{ Body: VisualizeRequest }>("/api/visualize", async (req, reply) => {
   const ctx = resolveCtx(req.headers);
   const text = req.body?.text?.trim();
   if (!text) return reply.code(400).send({ error: "Пустой текст" });
-  if (text.length > 4000) return reply.code(400).send({ error: "Текст длиннее 4000 символов — выделите фрагмент" });
+  if (text.length > TEXT_LIMITS.visual)
+    return reply.code(400).send({ error: `Слишком длинный фрагмент: ${text.length} символов при пределе ${TEXT_LIMITS.visual}. Выделите абзац или блок поменьше.` });
 
   const started = Date.now();
   try {
@@ -79,7 +81,8 @@ app.post<{ Body: VisualizeRequest }>("/api/process", async (req, reply) => {
   const ctx = resolveCtx(req.headers);
   const text = req.body?.text?.trim();
   if (!text) return reply.code(400).send({ error: "Пустой текст" });
-  if (text.length > 6000) return reply.code(400).send({ error: "Текст длиннее 6000 символов — разбейте процесс на части" });
+  if (text.length > TEXT_LIMITS.process)
+    return reply.code(400).send({ error: `Слишком длинное описание процесса: ${text.length} символов при пределе ${TEXT_LIMITS.process}. Разбейте процесс на этапы.` });
   const started = Date.now();
   try {
     const { process, fixes } = repairProcess(await textToProcess(ctx, text));

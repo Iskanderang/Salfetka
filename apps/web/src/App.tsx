@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { LAYOUTS, LAYOUT_LABELS, PROVIDER_IDS, type AiSettings, type HealthResponse, type Item, type Layout, type ProviderInfo, type Visual } from "@napkin/shared";
+import { LAYOUTS, LAYOUT_LABELS, PROVIDER_IDS, TEXT_LIMITS, type AiSettings, type HealthResponse, type Item, type Layout, type ProviderInfo, type Visual } from "@napkin/shared";
 import { health, processText, providers as fetchProviders, setAiSettings, visualize } from "./api";
 import { ProcessPane, type ProcDoc } from "./process/ProcessPane";
 import { AiDialog } from "./AiDialog";
@@ -31,6 +31,9 @@ const SAMPLE = `Как запустить свой продукт с нуля.
 type Doc = { id: string; visual: Visual; layout: Layout; source: string; at: number };
 
 /** Этапы работы модели для экрана ожидания (реальный ответ приходит одним запросом — этапы идут по таймеру). */
+/** 12 300 → «12 300» */
+const fmtN = (n: number) => n.toLocaleString("ru-RU");
+
 const STAGES = ["Читаю текст", "Выбираю форму", "Подбираю иконки", "Рисую схему"];
 const PROC_STAGES = ["Читаю текст", "Нахожу шаги и исполнителей", "Связываю развилки", "Раскладываю схему"];
 type Pop = { kind: "item"; index: number; x: number; y: number } | { kind: "title"; x: number; y: number } | null;
@@ -127,6 +130,9 @@ export function App() {
   const style = styleById(styleId);
   const selected = text.slice(sel[0], sel[1]).trim();
   const source = selected || text.trim();
+  // за раз в модель уходит не больше TEXT_LIMITS символов: иначе она теряет детали или обрезает ответ
+  const limit = mode === "process" ? TEXT_LIMITS.process : TEXT_LIMITS.visual;
+  const tooLong = source.length > limit;
 
   useEffect(() => {
     fetchProviders().then(setProviderList);
@@ -161,6 +167,7 @@ export function App() {
 
   async function runProcess() {
     if (!source || loading) return;
+    if (tooLong) return setToast(`Слишком длинно: выделите фрагмент до ${fmtN(limit)} символов`);
     abortRef.current?.abort();
     const ac = new AbortController();
     abortRef.current = ac;
@@ -181,6 +188,7 @@ export function App() {
 
   async function run(variant = false) {
     if (mode === "process") return runProcess();
+    if (!variant && tooLong) return setToast(`Слишком длинно: выделите фрагмент до ${fmtN(limit)} символов`);
     const src = variant ? current?.source : source;
     if (!src || loading) return;
     abortRef.current?.abort();
@@ -362,7 +370,12 @@ export function App() {
             <button className="icon-btn" onClick={() => setLeftCollapsed(false)} title="Показать текст">
               <Ico name="panel-left-open" size={18} />
             </button>
-            <button className="primary run-mini" onClick={() => run()} disabled={!!loading || !source || !status?.ok} title="Визуализировать (Ctrl+Enter)">
+            <button
+              className="primary run-mini"
+              onClick={() => run()}
+              disabled={!!loading || !source || !status?.ok || tooLong}
+              title={tooLong ? `Слишком длинно: ${fmtN(source.length)} из ${fmtN(limit)} символов` : "Визуализировать (Ctrl+Enter)"}
+            >
               {loading === "new" ? <span className="spinner small" /> : <Ico name="sparkles" size={18} />}
             </button>
             <span className="vertical-label">Текст</span>
@@ -413,8 +426,14 @@ export function App() {
               <button
                 className="primary run-btn"
                 onClick={() => run()}
-                disabled={!!loading || !source || !status?.ok}
-                title={selected ? "Визуализировать выделенный фрагмент (Ctrl+Enter)" : "Визуализировать весь текст (Ctrl+Enter)"}
+                disabled={!!loading || !source || !status?.ok || tooLong}
+                title={
+                  tooLong
+                    ? `Слишком длинно: ${fmtN(source.length)} из ${fmtN(limit)} символов — выделите фрагмент`
+                    : selected
+                      ? "Визуализировать выделенный фрагмент (Ctrl+Enter)"
+                      : "Визуализировать весь текст (Ctrl+Enter)"
+                }
               >
                 {loading === "new" ? <span className="spinner small" /> : <Ico name="sparkles" />}
                 {loading === "new" ? (isProc ? "Рисую процесс…" : "Создаю схему…") : isProc ? "Нарисовать процесс" : "Визуализировать"}
@@ -426,6 +445,22 @@ export function App() {
                   setHelp("usage");
                 }}
               />
+            </div>
+            {/* сколько уйдёт в модель: выделенное или весь текст; у предела — жёлтым, за пределом — красным и с подсказкой */}
+            <div className={`limit-line ${tooLong ? "over" : source.length > limit * 0.85 ? "warn" : ""}`} aria-live="polite">
+              {tooLong ? (
+                <>
+                  <Ico name="circle-alert" size={14} />
+                  <span>
+                    {selected ? "Выделено" : "Весь текст —"} <b>{fmtN(source.length)}</b> символов, а за раз можно до <b>{fmtN(limit)}</b>.{" "}
+                    {isProc ? "Разбейте процесс на этапы и выделите один." : "Выделите абзац или блок — схема выйдет точнее."}
+                  </span>
+                </>
+              ) : (
+                <span>
+                  {selected ? "Выделено" : "Весь текст"}: <b>{fmtN(source.length)}</b> из {fmtN(limit)} символов
+                </span>
+              )}
             </div>
           {isProc && procHistory.length > 0 && (
             <div className="history">
