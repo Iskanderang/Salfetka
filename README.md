@@ -47,17 +47,21 @@
 
 ## Запуск
 
-1. LM Studio → включить сервер (порт 1234). Модели загрузит `start.bat`, или вручную:
-   ```bash
-   lms load google/gemma-4-12b-qat --gpu max --context-length 8192 -y
-   lms load text-embedding-nomic-embed-text-v1.5 -y
-   ```
-2. `start.bat` — или вручную:
-   ```bash
-   npm install
-   npm run dev
-   ```
-3. Открыть http://localhost:5173
+**В первый раз** дважды щёлкните `Первый запуск.bat`. Это мастер: он по шагам проверит Node.js, поставит библиотеки,
+спросит, где работает нейросеть (LM Studio на вашем компьютере или облако OpenRouter), найдёт LM Studio, включит её сервер
+и скачает модели. Где может — ставит сам (winget, npm, lms), где не может — подсказывает и ждёт. Ответы — цифрами.
+
+**Дальше всегда** запускайте `start.bat`: без вопросов проверит всё, обновит Салфетку и откроет http://localhost:5173.
+Если мастер не пройден, `start.bat` откроет его сам.
+
+Вручную, без мастера:
+```bash
+lms load google/gemma-4-12b-qat --gpu max --context-length 8192 -y
+lms load text-embedding-nomic-embed-text-v1.5 -y
+copy apps\api\.env.example apps\api\.env
+npm install
+npm run dev
+```
 
 Без embedding-модели всё работает, но иконки ищутся по словам, а не по смыслу.
 

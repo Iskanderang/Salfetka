@@ -10,3 +10,5 @@ docs/
 .claude/
 frames/
 frames-v/
+
+.first-run-done

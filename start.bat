@@ -12,6 +12,22 @@ if not defined NF_STAGE (
 setlocal
 title Салфетка - превращаем текст в схемы
 
+rem ─── Первый запуск ──────────────────────────────────────────
+rem Мастер ещё не пройден - ведём туда. Установки, где всё уже есть (библиотеки и настройки),
+rem отмечаем сами, чтобы не задавать лишних вопросов.
+if exist ".first-run-done" goto :first_done
+if exist "node_modules" if exist "apps\api\.env" (
+  >".first-run-done" echo local
+  goto :first_done
+)
+echo.
+echo   Похоже, Салфетка запускается впервые - открываю мастер первого запуска.
+"%~dp0Первый запуск.bat"
+:first_done
+rem local - нейросеть на этом компьютере (LM Studio), cloud - облако OpenRouter
+set "SETUP_MODE=local"
+set /p SETUP_MODE=<".first-run-done"
+
 rem ─── Настройки ──────────────────────────────────────────────
 rem Модель из LM Studio. Поменяли модель - поменяйте и в apps\api\.env
 set "MODEL=google/gemma-4-12b-qat"
@@ -68,18 +84,24 @@ echo.
 
 rem ─── 3. LM Studio ───────────────────────────────────────────
 echo %CY%[3/6]%N% %B%Стучусь в LM Studio%N% - там живёт нейросеть...
-where lms >nul 2>nul || goto :no_lms
-lms server start >nul 2>nul
+if /i "%SETUP_MODE%"=="cloud" goto :cloud_mode
+call :find_lms
+if not defined LMS goto :no_lms
+call :ping
+if not defined LM_UP "%LMS%" server start >nul 2>nul
+call :ping
+if not defined LM_UP goto :no_server
 echo       %GR%✓%N% Сервер нейросети на порту 1234. Проснулся, ворчит, но работает.
 echo.
 
 rem ─── 4. Модель ──────────────────────────────────────────────
 echo %CY%[4/6]%N% %B%Проверяю, загружена ли модель%N% %DIM%%MODEL%%N%
-lms ps 2>nul | findstr /i /c:"%MODEL%" >nul && goto :model_ready
+"%LMS%" ls 2>nul | findstr /i /c:"%MODEL%" >nul || goto :model_missing
+"%LMS%" ps 2>nul | findstr /i /c:"%MODEL%" >nul && goto :model_ready
 echo       Модель спит. Заливаю ~7 ГБ мозгов в видеокарту.
 echo       %DIM%Видеокарта слегка нервничает, вентиляторы делают вид, что всё под контролем.%N%
 echo.
-lms load "%MODEL%" --gpu max --context-length 8192 -y
+"%LMS%" load "%MODEL%" --gpu max --context-length 8192 -y
 if errorlevel 1 goto :model_fail
 echo.
 echo       %GR%✓%N% Модель загружена. IQ видеокарты временно повышен.
@@ -88,8 +110,8 @@ goto :model_done
 echo       %GR%✓%N% Модель уже в памяти и разминаться не нужно.
 :model_done
 rem Вторая, крошечная модель подбирает иконки по смыслу
-lms ps 2>nul | findstr /i /c:"%EMBED%" >nul && goto :embed_ready
-lms load "%EMBED%" -y >nul 2>nul
+"%LMS%" ps 2>nul | findstr /i /c:"%EMBED%" >nul && goto :embed_ready
+"%LMS%" load "%EMBED%" -y >nul 2>nul
 if errorlevel 1 (
   echo       %YE%!%N% Модель для иконок не загрузилась - иконки будут искаться по словам, а не по смыслу.
   goto :embed_done
@@ -101,21 +123,52 @@ echo.
 goto :deps
 
 :no_lms
-echo       %YE%!%N% Не нашёл консольную утилиту LM Studio %DIM%(lms)%N%.
-echo       %YE%  Откройте LM Studio вручную: загрузите модель и включите сервер%N%
-echo       %YE%  (вкладка Developer → Start Server). Я пока продолжу без неё.%N%
+rem помощника lms нет, но LM Studio может быть открыта с включённым сервером - тогда всё работает
+call :ping
+if defined LM_UP (
+  echo       %GR%✓%N% Сервер нейросети отвечает на порту 1234.
+  echo.
+  echo %CY%[4/6]%N% %B%Модель%N% - %DIM%помощник LM Studio не найден, проверьте модель в самой программе%N%
+  echo.
+  goto :deps
+)
+echo       %YE%!%N% LM Studio не найдена или ни разу не открывалась.
+echo         Запустите %B%Первый запуск.bat%N% - он поможет её поставить.
+echo         Или работайте через облако: в браузере окно «Нейросеть» → «Облако».
+goto :skip_model
+
+:no_server
+echo       %YE%!%N% Сервер LM Studio не отвечает.
+echo         Включите его в LM Studio: вкладка %B%Developer%N%, переключатель %B%Status: Running%N%.
+goto :skip_model
+
+:cloud_mode
+echo       %GR%✓%N% Работаем через облако OpenRouter - LM Studio не нужна.
+goto :skip_model
+
+:model_missing
+echo       %YE%!%N% Модель %B%%MODEL%%N% не скачана.
+echo         Запустите %B%Первый запуск.bat%N% - он скачает её %DIM%(около 7 ГБ)%N%. Или выберите облако.
+echo.
+goto :deps
+
+:skip_model
+echo.
+echo %CY%[4/6]%N% %B%Модель%N% - %DIM%пропускаю%N%
 echo.
 goto :deps
 
 :model_fail
-echo       %RE%✗ Модель не загрузилась.%N% Возможно, у неё другое имя.
-echo         Список моделей: %B%lms ls%N%. Имя поменяйте в начале start.bat и в apps\api\.env
-echo         Продолжаю, но без модели схемы рисоваться не будут.
+echo       %RE%✗ Модель скачана, но не загрузилась.%N% Возможно, не хватает памяти видеокарты.
+echo         Закройте тяжёлые программы и запустите start.bat снова,
+echo         или выберите модель полегче %DIM%(начало start.bat и apps\api\.env)%N%.
 echo.
 
 rem ─── 5. Зависимости ─────────────────────────────────────────
 :deps
 echo %CY%[5/6]%N% %B%Проверяю библиотеки проекта%N%...
+rem без apps\api\.env сервис не стартует - создаём из шаблона
+if not exist "apps\api\.env" copy /y "apps\api\.env.example" "apps\api\.env" >nul
 if defined FORCE_NPM goto :deps_update
 if exist node_modules goto :deps_ok
 echo       Первый запуск: скачиваю половину интернета %DIM%(для Node.js это нормально)%N%.
@@ -132,6 +185,9 @@ if errorlevel 1 goto :npm_fail
 :deps_ok
 echo       %GR%✓%N% Всё на месте, ничего не потерялось.
 echo.
+
+set "OPEN_URL=http://localhost:%WEB_PORT%"
+if /i "%NF_SETUP%"=="cloud" set "OPEN_URL=http://localhost:%WEB_PORT%/?setup=cloud"
 
 rem ─── 6. Запуск ──────────────────────────────────────────────
 echo %CY%[6/6]%N% %B%Запускаю сервис%N%...
@@ -169,7 +225,7 @@ echo    Ниже будут технические логи. Их можно н�
 echo    ─────────────────────────────────────────────────────────%N%
 echo.
 
-if not defined NF_NO_BROWSER start "" /min cmd /c "%SystemRoot%\System32\timeout.exe /t 4 >nul & start http://localhost:%WEB_PORT%"
+if not defined NF_NO_BROWSER start "" /min cmd /c "%SystemRoot%\System32\timeout.exe /t 4 >nul & start %OPEN_URL%"
 call npm run dev
 
 echo.
@@ -181,7 +237,7 @@ exit /b 0
 :already
 echo       %YE%!%N% Сервис уже запущен (порт %WEB_PORT% занят). Второй раз не запускаю,
 echo         а то они начнут спорить, кто главный. Открываю браузер.
-if not defined NF_NO_BROWSER start http://localhost:%WEB_PORT%
+if not defined NF_NO_BROWSER start %OPEN_URL%
 echo.
 %SystemRoot%\System32\timeout.exe /t 5
 exit /b 0
@@ -201,3 +257,18 @@ echo         Если не поможет, удалите папку node_module
 echo.
 pause
 exit /b 1
+
+rem ─── Помощники ──────────────────────────────────────────────
+rem Помощник lms: в PATH, затем в обычных папках LM Studio (появляется после первого открытия программы)
+:find_lms
+set "LMS="
+for %%p in (lms.exe) do set "LMS=%%~$PATH:p"
+if not defined LMS if exist "%USERPROFILE%\.lmstudio\bin\lms.exe" set "LMS=%USERPROFILE%\.lmstudio\bin\lms.exe"
+if not defined LMS if exist "%USERPROFILE%\.cache\lm-studio\bin\lms.exe" set "LMS=%USERPROFILE%\.cache\lm-studio\bin\lms.exe"
+exit /b 0
+
+rem Отвечает ли сервер LM Studio
+:ping
+set "LM_UP="
+curl -sf -m 3 -o nul "http://localhost:1234/v1/models" >nul 2>nul && set "LM_UP=1"
+exit /b 0

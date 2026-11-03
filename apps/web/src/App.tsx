@@ -101,6 +101,15 @@ export function App() {
     models: a.models ?? {},
   }));
   const [aiOpen, setAiOpen] = useState(false);
+  // после мастера первого запуска с выбором «облако» (?setup=cloud) — сразу окно с ключом OpenRouter
+  useEffect(() => {
+    const url = new URL(location.href);
+    if (url.searchParams.get("setup") !== "cloud") return;
+    setAi((a) => ({ ...a, provider: "openrouter" }));
+    setAiOpen(true);
+    url.searchParams.delete("setup");
+    window.history.replaceState(null, "", url.pathname + url.search);
+  }, []);
   const [sideTab, setSideTab] = useLocal<SideTab>("nf.sideTab", "shape");
   const [leftCollapsed, setLeftCollapsed] = useLocal("nf.leftCollapsed", false);
   const [editorSize, setEditorSize] = useLocal("nf.editorSize", 14);
