@@ -5,3 +5,8 @@ dist
 
 # видео (ролик собирается скриптом scripts/promo-render.mjs)
 *.mp4
+# личные материалы и служебные файлы инструментов
+docs/
+.claude/
+frames/
+frames-v/

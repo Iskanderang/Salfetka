@@ -7,7 +7,8 @@ import { buildIndex, iconStatus, resolveIcons, searchIcons } from "./icons.js";
 import { friendlyError, providerList, resolveCtx } from "./providers.js";
 
 const app = Fastify({ logger: { level: "info", redact: ["req.headers['x-ai-key']"] } });
-await app.register(cors, { origin: true });
+// только интерфейс Салфетки на этом компьютере: чужой сайт в браузере не сможет пользоваться вашей моделью
+await app.register(cors, { origin: [/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/] });
 
 app.get("/api/providers", async () => providerList());
 
