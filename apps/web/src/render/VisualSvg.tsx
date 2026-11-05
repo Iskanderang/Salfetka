@@ -8,6 +8,7 @@ import { Text } from "./primitives";
 import { textHeight } from "./text";
 import { lighten, type Theme } from "./themes";
 import type { StyleDef } from "./styles";
+import { comicPaper, styledHeader } from "./stylePasses";
 
 type Props = {
   visual: Visual;
@@ -31,7 +32,11 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
     const th = textHeight(titleFit);
     let top = 44;
     let head = null;
-    if (header === "center" || header === "underline") {
+    const styled = header === "none" ? null : styledHeader(p, visual.title, W);
+    if (styled) {
+      head = styled.head;
+      top = styled.bottom;
+    } else if (header === "center" || header === "underline") {
       const lineW = Math.min(W - 120, Math.max(...titleFit.lines.map((l) => l.length * titleFit.size * 0.5), 120));
       head = (
         <g data-title="1">
@@ -67,9 +72,10 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
       top = bandH + 40;
     }
     const r = RENDERERS[layout](visual, p, top);
-    const height = r.height + (p.premium ? 20 : 0);
+    const height = r.height + (p.premium || p.comic ? 20 : 0);
     // фон премиум-стиля: мягкое свечение цветов палитры (свой фон пользователя — без украшений)
     let backdrop = null;
+    if (p.comic && !look.bg) backdrop = <rect data-bg="1" width={W} height={height} fill={`url(#${uid}-paper)`} />;
     if (p.premium && !look.bg) {
       backdrop =
         p.premium === "dark" ? (
@@ -91,6 +97,7 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
       defs: (
         <>
           {p.defsNodes()}
+          {p.comic && comicPaper(uid)}
           {p.premium && (
             <>
               <radialGradient id={`${uid}-glow0`}>

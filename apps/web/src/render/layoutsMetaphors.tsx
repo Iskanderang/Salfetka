@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Item } from "@napkin/shared";
 import { Text } from "./primitives";
-import { textHeight, type Fitted } from "./text";
+import { textHeight, textWidth, type Fitted } from "./text";
 import { lighten, mix, tint } from "./themes";
 import type { Paint } from "./paint";
 import { INNER, PAD, W, Small, accentText, max, valueText, type Renderer } from "./layouts";
@@ -949,7 +949,7 @@ const dialogue: Renderer = (v, p, top) => {
     const phrase = it.text || it.label;
     const name = p.fit(speaker, maxW - 40, 13, 1, 800, 11);
     const body = p.fit(phrase, maxW - 40, 16, 6, 400, 12);
-    const bodyW = Math.min(maxW, Math.max(180, 40 + max(body.lines.map((l) => l.length * body.size * 0.55)), 40 + max(name.lines.map((l) => l.length * name.size * 0.6))));
+    const bodyW = Math.min(maxW, Math.max(180, 40 + textWidth(body, p.bodyWeight, p.font), 40 + textWidth(name, 800, p.font)));
     const h = 18 + (name.lines.length ? textHeight(name) + 4 : 0) + textHeight(body) + 16;
     const ax = left ? PAD + avatarR : W - PAD - avatarR;
     const bx = left ? ax + avatarR + 22 : ax - avatarR - 22 - bodyW;

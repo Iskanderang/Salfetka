@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Салфетка — все формы</title>
+    <style>
+      body { margin: 0; font-family: Manrope, "Segoe UI", sans-serif; background: #e9ecf2; }
+      .bar { position: sticky; top: 0; z-index: 2; display: flex; gap: 12px; align-items: center; padding: 10px 16px; background: #fff; box-shadow: 0 1px 4px #0002; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; padding: 16px; }
+      figure { margin: 0; background: #fff; border-radius: 10px; overflow: hidden; }
+      figcaption { padding: 6px 10px; font-size: 13px; color: #555; }
+      figure svg { width: 100%; height: auto; display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/gallery/main.tsx"></script>
+  </body>
+</html>

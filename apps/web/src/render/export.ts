@@ -11,7 +11,9 @@ export async function svgToString(svg: SVGSVGElement, transparent = false): Prom
     el.removeAttribute("data-icon");
     el.removeAttribute("data-title");
   });
-  const used = fontsInStack(clone.getAttribute("font-family") ?? "");
+  // шрифт схемы задан на корне, заголовки стилей «Комикс» и «Пиксель» — своим шрифтом
+  const stacks = [clone, ...clone.querySelectorAll("[font-family]")].map((el) => el.getAttribute("font-family") ?? "").join(" ");
+  const used = fontsInStack(stacks);
   if (used.length) {
     const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
     style.textContent = (await Promise.all(used.map(fontFaceCss))).join("");

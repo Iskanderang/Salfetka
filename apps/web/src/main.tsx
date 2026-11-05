@@ -6,7 +6,7 @@ import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
 import { App } from "./App";
 import { clearTextCache } from "./render/text";
-import { fontById, loadFont } from "./render/fonts";
+import { fontById, loadFont, styleFonts } from "./render/fonts";
 import { initialUiTheme } from "./uiTheme";
 import "./styles.css";
 
@@ -14,14 +14,14 @@ import "./styles.css";
 document.documentElement.dataset.theme = initialUiTheme();
 
 async function boot() {
-  // рукописный шрифт стилей «Салфетка»/«Доска» и шрифт, выбранный пользователем в прошлый раз
+  // шрифты стилей («Набросок», «Доска», «Комикс») и шрифт, выбранный пользователем в прошлый раз
   let saved: string | undefined;
   try {
     saved = JSON.parse(localStorage.getItem("nf.look") ?? "{}").font;
   } catch {
     /* нет сохранённых настроек */
   }
-  await Promise.all([loadFont(fontById("caveat")), loadFont(fontById(saved))]);
+  await Promise.all([...styleFonts().map(loadFont), loadFont(fontById(saved))]);
   clearTextCache();
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>

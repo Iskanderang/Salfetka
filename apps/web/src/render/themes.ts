@@ -132,6 +132,19 @@ export const THEMES: Theme[] = [
     onAccent: "#FFFFFF",
     palette: ["#111111", "#3D3D3D", "#5C5C5C", "#2B2B2B", "#4A4A4A", "#1F1F1F", "#555555", "#333333"],
   },
+  {
+    // чистые печатные краски комиксов: красный, синий, жёлтый — под стиль «Комикс»
+    id: "comic",
+    name: "Комикс",
+    bg: "#FFFDF5",
+    card: "#FFFFFF",
+    title: "#151515",
+    text: "#1C1C1C",
+    muted: "#55524A",
+    line: "#151515",
+    onAccent: "#FFFFFF",
+    palette: ["#E8343A", "#1F6FE5", "#FFC21A", "#21A65A", "#FF7A1A", "#8E3FD1", "#12B5D6", "#F0478F"],
+  },
 ];
 
 export const color = (t: Theme, i: number) => t.palette[i % t.palette.length];

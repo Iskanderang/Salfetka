@@ -4,6 +4,8 @@ import type { Theme } from "./themes";
 export const HAND_FONT = '"Caveat", "Segoe Print", cursive';
 export const PREMIUM_FONT = '"Manrope", "Segoe UI", Arial, sans-serif';
 export const BIZ_FONT = 'Bahnschrift, "Segoe UI", Arial, sans-serif';
+export const COMIC_FONT = '"Balsamiq Sans", "Comic Sans MS", cursive';
+export const COMIC_TITLE = '"Unbounded", "Arial Black", sans-serif';
 
 /**
  * Стиль отвечает за форму: шрифт, обводки, заливки, скругления, «от руки».
@@ -26,8 +28,14 @@ export type StyleDef = {
   radius: number;
   stroke: number;
   iconStroke: number;
-  /** Шапка с заголовком */
-  header: "center" | "underline" | "band" | "hero";
+  /** Шапка с заголовком; caption — плашка комикса */
+  header: "center" | "underline" | "band" | "hero" | "caption";
+  /** Шрифт заголовка, если он отличается от основного */
+  titleFont?: string;
+  /** Множитель кегля заголовка (широкие экранные шрифты) */
+  titleScale?: number;
+  /** Комикс: контур тушью, жёсткая тень, растровые точки */
+  comic?: boolean;
   /** «Как лендинг»: градиенты, мягкие тени, крупная типографика; светлый или ночной фон */
   premium?: "light" | "dark";
   /** Нарисовано от руки (rough.js) */
@@ -179,6 +187,25 @@ export const STYLES: StyleDef[] = [
     header: "hero",
     premium: "dark",
     override: { bg: "#0A1428", card: "#13223D", title: "#FFFFFF", text: "#E6EEF8", muted: "#93A7C2", line: "#2A4166", onAccent: "#FFFFFF" },
+  },
+  {
+    id: "comic",
+    name: "Комикс",
+    hint: "Тушь, точки, тени",
+    font: COMIC_FONT,
+    titleFont: COMIC_TITLE,
+    titleScale: 0.82,
+    textScale: 1,
+    titleWeight: 900,
+    labelWeight: 700,
+    accent: "solid",
+    card: "outline",
+    radius: 0.5,
+    stroke: 3,
+    iconStroke: 2.4,
+    header: "caption",
+    comic: true,
+    override: { bg: "#FFF8E6", card: "#FFFFFF", title: "#151515", text: "#1C1C1C", muted: "#4A463E", line: "#151515" },
   },
 ];
 

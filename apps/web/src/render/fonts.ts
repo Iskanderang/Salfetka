@@ -13,6 +13,11 @@ import "@fontsource/caveat/400.css";
 import "@fontsource/caveat/700.css";
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/700.css";
+import "@fontsource/balsamiq-sans/400.css";
+import "@fontsource/balsamiq-sans/700.css";
+// заголовочный шрифт стиля «Комикс»
+import "@fontsource/unbounded/700.css";
+import "@fontsource/unbounded/900.css";
 
 export type FontDef = {
   id: string;
@@ -33,22 +38,29 @@ export const FONTS: FontDef[] = [
   { id: "comfortaa", name: "Comfortaa", family: "Comfortaa", stack: '"Comfortaa", "Segoe UI", Arial, sans-serif', scale: 0.95 },
   { id: "pt-serif", name: "PT Serif", family: "PT Serif", stack: '"PT Serif", Georgia, serif', scale: 1 },
   { id: "caveat", name: "Caveat (от руки)", family: "Caveat", stack: '"Caveat", "Segoe Print", cursive', scale: 1.3 },
+  { id: "balsamiq-sans", name: "Balsamiq (комикс)", family: "Balsamiq Sans", stack: '"Balsamiq Sans", "Comic Sans MS", cursive', scale: 1 },
 ];
 
+/** Шрифты заголовков стилей: в списке выбора их нет, но в экспорт они встраиваются. */
+export const TITLE_FONTS: FontDef[] = [{ id: "unbounded", name: "Unbounded", family: "Unbounded", stack: '"Unbounded", "Arial Black", sans-serif', scale: 0.9 }];
+
 export const fontById = (id: string | undefined) => FONTS.find((f) => f.id === id);
+
+/** Шрифты, которые стили используют сами (не через выбор пользователя), — грузим до первого рендера. */
+export const styleFonts = () => [fontById("caveat"), fontById("balsamiq-sans"), ...TITLE_FONTS];
 
 /** Ждём файлы шрифта, чтобы замерять ширину текста уже по нему. */
 export async function loadFont(f: FontDef | undefined) {
   if (!f) return;
   try {
-    await Promise.all([400, 700].map((w) => document.fonts.load(`${w} 20px "${f.family}"`, "Абв Abc")));
+    await Promise.all([400, 700, 900].map((w) => document.fonts.load(`${w} 20px "${f.family}"`, "Абв Abc")));
   } catch {
     /* запасной шрифт тоже подойдёт */
   }
 }
 
 // Файлы для встраивания в экспорт: SVG-картинка не видит шрифты страницы.
-const FILES = import.meta.glob("../../../../node_modules/@fontsource/*/files/*-{cyrillic,latin}-{400,700}-normal.woff2", {
+const FILES = import.meta.glob("../../../../node_modules/@fontsource/*/files/*-{cyrillic,latin}-{400,700,900}-normal.woff2", {
   query: "?url",
   import: "default",
   eager: true,
@@ -77,7 +89,7 @@ export function fontFaceCss(f: FontDef): Promise<string> {
   if (!hit) {
     const jobs: Promise<string>[] = [];
     for (const [path, url] of Object.entries(FILES)) {
-      const m = path.match(new RegExp(`/@fontsource/${f.id}/files/${f.id}-(cyrillic|latin)-(400|700)-normal\\.woff2$`));
+      const m = path.match(new RegExp(`/@fontsource/${f.id}/files/${f.id}-(cyrillic|latin)-(400|700|900)-normal\\.woff2$`));
       if (!m) continue;
       const [, subset, weight] = m;
       jobs.push(
@@ -93,4 +105,4 @@ export function fontFaceCss(f: FontDef): Promise<string> {
 }
 
 /** Какие из наших шрифтов упомянуты в font-family. */
-export const fontsInStack = (stack: string) => FONTS.filter((f) => stack.includes(`"${f.family}"`));
+export const fontsInStack = (stack: string) => [...FONTS, ...TITLE_FONTS].filter((f) => stack.includes(`"${f.family}"`));

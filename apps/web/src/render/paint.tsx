@@ -28,6 +28,9 @@ export type Role = "accent" | "card" | "chip" | "plain";
 
 const gen = rough.generator();
 
+/** Тушь «Комикса» */
+export const COMIC_INK = "#151515";
+
 const hash = (...xs: number[]) => {
   let h = 2166136261;
   for (const x of xs) h = Math.imul(h ^ Math.round(x * 10), 16777619);
@@ -99,6 +102,28 @@ export class Paint {
     return !!this.style.sketch;
   }
 
+  get comic() {
+    return !!this.style.comic;
+  }
+
+  /** Шрифт заголовка: свой у «Комикса»; шрифт, выбранный пользователем, важнее. */
+  get titleFont(): string {
+    return this.look.font ? this.font : (this.style.titleFont ?? this.font);
+  }
+
+  /** Подгонка заголовка — его шрифтом и с поправкой на ширину экранных шрифтов. */
+  fitTitle(text: string, width: number, size: number, maxLines: number, minSize: number): Fitted {
+    const k = this.look.font ? 1 : (this.style.titleScale ?? 1);
+    const f = this.titleFont;
+    const scale = this.scale * k;
+    return fitText(text, width, Math.round(size * scale), maxLines, this.titleWeight, Math.round(minSize * scale), f);
+  }
+
+  /** Текст поверх заливки: белый, если читается, иначе тушь (жёлтый, светло-зелёный). */
+  textOn(c: string, dark = COMIC_INK): string {
+    return contrast(c, "#FFFFFF") >= 2.6 ? "#FFFFFF" : dark;
+  }
+
   /** Чернила «Салфетки»; на тёмном фоне становятся светлыми. У «Доски» чернил нет — линии цветным мелом. */
   get ink(): string | undefined {
     const ink = this.style.sketch?.ink;
@@ -156,6 +181,46 @@ export class Paint {
           <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#1E3A8A" floodOpacity="0.09" />
         </filter>,
       );
+    return `url(#${id})`;
+  }
+
+  // ─── Комикс: жёсткая тень и растровые точки ───────────────
+
+  /** Жёсткая тень тушью со сдвигом, без размытия — как у панелей комикса. */
+  get pop(): string | undefined {
+    if (!this.comic) return undefined;
+    const id = `${this.uid}-pop`;
+    const d = 5;
+    if (!this.defs.has(id))
+      this.defs.set(
+        id,
+        <filter key={id} id={id} x="-10%" y="-10%" width="135%" height="200%">
+          <feFlood floodColor={COMIC_INK} />
+          <feComposite in2="SourceAlpha" operator="in" />
+          <feOffset dx={d} dy={d} result="shadow" />
+          <feMerge>
+            <feMergeNode in="shadow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>,
+      );
+    return `url(#${id})`;
+  }
+
+  /** Заливка цветом с растровыми точками чуть темнее (Ben-Day). */
+  halftone(c: string): string {
+    const id = `${this.uid}-ht${c.replace(/[^\w]/g, "")}`;
+    if (!this.defs.has(id)) {
+      const dot = shade(c, 0.2);
+      this.defs.set(
+        id,
+        <pattern key={id} id={id} width="9" height="9" patternUnits="userSpaceOnUse">
+          <rect width="9" height="9" fill={c} />
+          <circle cx="2.25" cy="2.25" r="1.5" fill={dot} />
+          <circle cx="6.75" cy="6.75" r="1.5" fill={dot} />
+        </pattern>,
+      );
+    }
     return `url(#${id})`;
   }
 
@@ -223,11 +288,25 @@ export class Paint {
     return role === "card" ? { ...card, filter: this.lift } : card;
   }
 
+  /** Комикс: всё обведено тушью, акценты — в растровых точках, у акцентов и карточек жёсткая тень. */
+  private comicSpec(role: Role, c: string): Spec {
+    const t = this.t;
+    const ink = COMIC_INK;
+    if (role === "accent") {
+      const on = this.textOn(c);
+      return { fill: this.halftone(c), stroke: ink, sw: 3, on, onMuted: on, icon: on, filter: this.pop };
+    }
+    if (role === "card") return { fill: t.card, stroke: ink, sw: 2.6, on: t.text, onMuted: t.muted, icon: shade(c, 0.1), filter: this.pop };
+    if (role === "chip") return { fill: lighten(c, 0.72), stroke: ink, sw: 2.2, on: shade(c, 0.6), onMuted: t.muted, icon: shade(c, 0.35) };
+    return { fill: t.card, stroke: ink, sw: 2.4, on: t.text, onMuted: t.muted, icon: shade(c, 0.1) };
+  }
+
   private rawSpec(role: Role, c: string): Spec {
     const t = this.t;
     const s = this.style;
     const ink = this.ink;
     if (s.premium) return this.premiumSpec(role, c);
+    if (s.comic) return this.comicSpec(role, c);
     if (s.sketch) {
       // «от руки»: штриховка цветом, контур чернилами (или мелом)
       const line = ink ?? c;
@@ -366,6 +445,7 @@ export class Paint {
 
   /** Линии-связки и вторичные элементы. */
   get lineColor() {
+    if (this.comic) return contrast(COMIC_INK, this.t.bg) < 3 ? "#F2F2F2" : COMIC_INK;
     return this.sketchy ? (this.ink ?? this.t.line) : this.t.line;
   }
 

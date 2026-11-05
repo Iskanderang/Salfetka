@@ -6,6 +6,7 @@ import { textHeight } from "../render/text";
 import { lighten, tint, type Theme } from "../render/themes";
 import type { StyleDef } from "../render/styles";
 import { layoutProcess, type Dir, type PlacedEdge, type PlacedNode } from "./layout";
+import { comicPaper, styledHeader } from "../render/stylePasses";
 
 const PAD = 40;
 const TASK_W = 168;
@@ -32,14 +33,18 @@ export function buildProcess(process: ProcessGraph, style: StyleDef, theme: Them
   const t = p.t;
   const kicker = p.premium ? "ПРОЦЕСС" : "";
   const titleFit = p.fit(process.title, 900, p.premium ? 38 : 30, 1, p.titleWeight, 22);
-  const top = 44 + (kicker ? 22 : 0) + textHeight(titleFit) + 34;
+  // «Комикс» — плашка со своим шрифтом, прижатая влево
+  const styled = styledHeader(p, process.title, 1000, PAD);
+  const top = styled ? styled.bottom - 6 : 44 + (kicker ? 22 : 0) + textHeight(titleFit) + 34;
   const L = layoutProcess(process, sizer(p), top, PAD, dir);
   const width = Math.max(L.width + PAD, 760);
   const height = L.height + PAD;
-  const ink = p.sketchy ? p.lineColor : p.premium === "dark" ? tint("#FFFFFF", 0.55) : lighten(t.text, 0.25);
+  const ink = p.sketchy || p.comic ? p.lineColor : p.premium === "dark" ? tint("#FFFFFF", 0.55) : lighten(t.text, 0.25);
 
   const laneColor = (i: number) => p.color(i);
-  const header = (
+  const header = styled ? (
+    styled.head
+  ) : (
     <g data-title="1">
       {kicker && (
         <text x={PAD} y={50} fontSize={13} fontWeight={800} letterSpacing={2.6} fill={p.premium === "dark" ? lighten(p.color(0), 0.35) : p.color(0)}>
@@ -74,20 +79,23 @@ export function buildProcess(process: ProcessGraph, style: StyleDef, theme: Them
 
   // фон считаем до <defs>: ночной градиент должен попасть в список определений
   const bgFill = p.premium === "dark" && !look.bg ? p.gradient("night", [[0, "#081225"], [1, "#0F2747"]], "down") : t.bg;
+  const body = (
+    <>
+      {header}
+      {lanes}
+      {edges}
+      {nodes}
+    </>
+  );
+
   return {
     layout: L,
     width,
     height,
     paint: p,
     bgFill,
-    body: (
-      <>
-        {header}
-        {lanes}
-        {edges}
-        {nodes}
-      </>
-    ),
+    paper: p.comic && !look.bg,
+    body,
   };
 }
 
@@ -201,6 +209,7 @@ export const ProcessSvg = forwardRef<SVGSVGElement, Props>(
             <feDisplacementMap in="SourceGraphic" scale="2.2" />
           </filter>
           {r.paint.defsNodes()}
+          {r.paper && comicPaper(uid)}
         </defs>
         {!transparent && (
           <rect
@@ -210,6 +219,7 @@ export const ProcessSvg = forwardRef<SVGSVGElement, Props>(
             fill={r.bgFill}
           />
         )}
+        {!transparent && r.paper && <rect data-bg="1" width={r.width} height={r.height} fill={`url(#${uid}-paper)`} />}
         {r.body}
       </svg>
     );

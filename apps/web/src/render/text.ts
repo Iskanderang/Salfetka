@@ -87,3 +87,8 @@ export const clearTextCache = () => cache.clear();
 export function textHeight(f: Fitted): number {
   return f.lines.length * f.size * LINE;
 }
+
+/** Ширина самой длинной строки подогнанного текста. */
+export function textWidth(f: Fitted, weight: number, font: string): number {
+  return Math.max(0, ...f.lines.map((l) => measure(l, f.size, weight, font)));
+}

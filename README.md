@@ -13,7 +13,7 @@
 [![Лицензия: PolyForm Noncommercial](https://img.shields.io/badge/лицензия-PolyForm%20Noncommercial-3b82f6)](LICENSE)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0ea5e9)
 ![Формы](https://img.shields.io/badge/форм-43-6366f1)
-![Стили](https://img.shields.io/badge/стилей-8-8b5cf6)
+![Стили](https://img.shields.io/badge/стилей-9-8b5cf6)
 [![Telegram](https://img.shields.io/badge/Telegram-ii__eggs-26A5E4?logo=telegram&logoColor=white)](https://t.me/ii_eggs)
 
 <a href="https://youtu.be/qyC6QuKjn84"><img src=".github/demo.jpg" alt="Видео: Салфетка за 40 секунд" width="720"></a><br>
@@ -36,12 +36,13 @@
   причины и решения, бизнес-фреймворки, визуальные метафоры, тексты и люди.
   Среди них есть айсберг, мишень, спидометр, пьедестал, весы, горы с флагом, храм, мост, ракета, дорожная карта,
   рыбья кость, SWOT, PESTEL, оргструктура, персона и FAQ.
-- **8 стилей**: Плоский, Набросок (от руки), Контур, Пастель, Бизнес, Доска (мел), Премиум и Премиум · ночь.
-  Стиль можно сочетать с любой из **10 палитр**.
+- **9 стилей**: Плоский, Набросок (от руки), Контур, Пастель, Бизнес, Доска (мел), Премиум, Премиум · ночь
+  и Комикс (тушь, жёсткие тени и растровые точки).
+  Стиль можно сочетать с любой из **11 палитр**.
 - **Фон**: 8 готовых вариантов (белый, бумага, графит, ночь…) или свой цвет. Текст сам подстраивается под тёмный фон.
 - **Иконки по смыслу**: Салфетка подбирает иконки из 1500+ иконок Lucide по смыслу пункта, а не по точному слову.
 - **Правка прямо на схеме**: клик по пункту открывает текст, подобранные иконки, поиск иконок по-русски, цвет и порядок.
-- **Оформление текста**: 7 шрифтов с кириллицей, размер, жирность и цвет.
+- **Оформление текста**: 8 шрифтов с кириллицей, размер, жирность и цвет.
 - **«Ещё вариант»**: тот же текст, но другая группировка и другие формы.
 
 ### Процессы
@@ -181,8 +182,9 @@ apps/api/src/process.ts             промпт и разбор процесс�
 apps/api/src/icons.ts               индекс иконок, смысловой поиск, подбор без повторов
 apps/api/src/providers.ts           сервисы нейросетей: адреса, модели, ключи, понятные ошибки
 apps/api/src/server.ts              /api/visualize, /api/process, /api/icons/search, /api/health, /api/models, /api/providers
-apps/web/src/render/styles.ts       описания 8 стилей
+apps/web/src/render/styles.ts       описания 9 стилей
 apps/web/src/render/paint.tsx       «кисть»: фигуры в нужном стиле (в т.ч. rough.js)
+apps/web/src/render/stylePasses.tsx шапка-плашка и фон в точках стиля «Комикс»
 apps/web/src/render/layouts*.tsx    формы: классические, новые, метафоры, предметы, тексты и люди
 apps/web/src/render/renderers.ts    реестр всех форм
 apps/web/src/catalog.ts             категории форм для боковой панели
@@ -220,6 +222,14 @@ scripts/update.bat                  автообновление при запу
 - Снимки самой Салфетки переснимаются автоматически (сервис и LM Studio должны работать): `npm run help:shots`.
 - Снимки LM Studio снимаются с открытого окна программы:
   `powershell -ExecutionPolicy Bypass -File scripts/capture-window.ps1 -Title "LM Studio" -Out apps/web/public/help/lm-1-search.png`.
+
+</details>
+
+<details>
+<summary>Галерея всех форм</summary>
+
+http://localhost:5173/gallery.html?style=comic&theme=comic — все формы и процесс в одном стиле и палитре.
+Снимки каждой формы в файлы (`docs/gallery/`): `node scripts/gallery-shots.mjs comic:comic flat:indigo`.
 
 </details>
 

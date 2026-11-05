@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Item, Layout, Visual } from "@napkin/shared";
 import { Text } from "./primitives";
-import { textHeight } from "./text";
+import { textHeight, textWidth } from "./text";
 import { tint } from "./themes";
 import type { Paint, Spec } from "./paint";
 
@@ -434,7 +434,7 @@ const compare: Renderer = (v, p, top) => {
 export function rootPill(p: Paint, title: string, cx: number, y: number, maxW: number) {
   const fit = p.fit(title, maxW - 60, 26, 2, p.titleWeight, 18);
   const h = Math.max(76, textHeight(fit) + 32);
-  const w = Math.min(maxW, Math.max(260, 70 + max(fit.lines.map((l) => l.length * fit.size * 0.55))));
+  const w = Math.min(maxW, Math.max(260, 70 + textWidth(fit, p.titleWeight, p.font)));
   // от руки тёмная штриховка «съедает» текст — подсвечиваем узел маркером
   const base = p.spec("accent", p.sketchy ? p.color(3) : p.style.accent === "soft" || p.premium ? p.color(0) : p.base.title);
   const sp: Spec = !p.sketchy && !p.premium && p.style.accent === "solid" ? { ...base, on: p.base.bg } : base;
