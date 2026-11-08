@@ -113,7 +113,6 @@ a { color: var(--accent-strong); }
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
 .center { text-align: center; margin-top: 8px; }
-.star { color: var(--star); display: inline-flex; vertical-align: -2px; }
 .ui-ico { flex: none; display: block; }
 
 /* ─── Кнопки: secondary по умолчанию, 32 px (small) ─── */
@@ -290,9 +289,8 @@ input[type="range"], input[type="color"] { border: none; box-shadow: none; paddi
 .side-tabs button:hover:not(:disabled) { color: var(--text-strong); background: transparent; }
 .side-tabs button.active { background: var(--surface); color: var(--text-strong); box-shadow: var(--shadow-sm); }
 .side-body { flex: 1; overflow: auto; padding: 4px 12px 16px; }
-.palette-strip { padding: 4px 12px 12px; border-bottom: 1px solid var(--border); }
-.palette-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-.palette-buttons { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.palette-strip { padding: 8px 0 16px; border-bottom: 1px solid var(--border); }
+.palette-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .palette-btn { aspect-ratio: 1; width: 100%; min-height: 0; padding: 0; border-radius: 50%; border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--border-strong); }
 .palette-btn:hover:not(:disabled) { transform: scale(1.1); border-color: var(--panel); background-color: transparent; }
 .palette-btn.active { box-shadow: 0 0 0 2px var(--primary); }
@@ -317,7 +315,7 @@ input[type="range"], input[type="color"] { border: none; box-shadow: none; paddi
 .cat-chevron { color: var(--faint); transition: transform 0.15s ease-out; }
 .cat.open .cat-chevron { transform: rotate(90deg); }
 
-/* «Аа Текст» */
+/* «Дополнительно»: настройки текста */
 .look-panel { display: flex; flex-direction: column; align-items: stretch; gap: 16px; padding: 8px 0; }
 .look-title { display: none; }
 .look-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }

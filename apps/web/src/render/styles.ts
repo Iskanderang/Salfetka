@@ -58,6 +58,20 @@ export type StyleDef = {
   fixedTheme?: Theme;
 };
 
+const COMIC: Theme = {
+  id: "comic",
+  name: "Комикс",
+  bg: "#FFF8E6",
+  card: "#FFFFFF",
+  title: "#151515",
+  text: "#1C1C1C",
+  muted: "#4A463E",
+  line: "#151515",
+  onAccent: "#FFFFFF",
+  // чистые печатные краски комиксов: красный, синий, жёлтый и соседи
+  palette: ["#E8343A", "#1F6FE5", "#FFC21A", "#21A65A", "#FF7A1A", "#8E3FD1", "#12B5D6", "#F0478F"],
+};
+
 const BLUEPRINT: Theme = {
   id: "blueprint",
   name: "Синька",
@@ -260,7 +274,7 @@ export const STYLES: StyleDef[] = [
     header: "caption",
     comic: true,
     paper: "dots",
-    override: { bg: "#FFF8E6", card: "#FFFFFF", title: "#151515", text: "#1C1C1C", muted: "#4A463E", line: "#151515" },
+    fixedTheme: COMIC,
   },
   {
     id: "blueprint",

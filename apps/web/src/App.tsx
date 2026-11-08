@@ -322,7 +322,6 @@ export function App() {
     }
   }
 
-  const recommended = current?.visual.layouts ?? [];
   // в режиме «Процессы» обычной схемы может не быть — панели оформления хватает пустой
   const sideVisual: Visual = current?.visual ?? { layouts: [], title: "", items: [] };
   const paint = current || procCurrent ? new Paint(style, theme, sideVisual, look) : null;
@@ -705,7 +704,6 @@ export function App() {
             onTab={setSideTab}
             visual={sideVisual}
             layout={current?.layout ?? "steps"}
-            recommended={recommended}
             theme={theme}
             style={style}
             look={look}

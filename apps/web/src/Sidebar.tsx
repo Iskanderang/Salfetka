@@ -16,7 +16,6 @@ type Props = {
   onTab: (t: SideTab) => void;
   visual: Visual;
   layout: Layout;
-  recommended: Layout[];
   theme: Theme;
   style: StyleDef;
   look: Look;
@@ -33,14 +32,14 @@ type Props = {
 const TABS: { id: SideTab; label: string }[] = [
   { id: "shape", label: "Форма" },
   { id: "style", label: "Стиль" },
-  { id: "text", label: "Аа Текст" },
+  { id: "text", label: "Дополнительно" },
 ];
 
-/** Правая панель: форма, стиль и оформление. Прокручивается отдельно — схема в центре стоит на месте. */
+/** Правая панель: форма, стиль и «Дополнительно» (палитра и текст). Прокручивается отдельно — схема в центре стоит на месте. */
 export function Sidebar(p: Props) {
   const [openCat, setOpenCat] = useState(() => categoryOf(p.layout));
 
-  // при выборе формы из «Советует модель» раскрываем её категорию
+  // выбранная форма (в том числе выбранная моделью) — её категория раскрыта
   useEffect(() => setOpenCat((c) => (visibleCategories().find((x) => x.id === c)?.layouts.includes(p.layout) ? c : categoryOf(p.layout))), [p.layout]);
 
   const thumb = (l: Layout, key: string) => (
@@ -54,7 +53,6 @@ export function Sidebar(p: Props) {
         <VisualSvg visual={p.visual} layout={l} theme={p.theme} style={p.style} look={p.look} className="svg-thumb" />
       </div>
       <span>
-        {p.recommended.includes(l) && <span className="star" title="Советует модель"><Ico name="star" size={13} /></span>}
         {LAYOUT_LABELS[l]}
       </span>
     </button>
@@ -70,34 +68,9 @@ export function Sidebar(p: Props) {
         ))}
       </div>
 
-      <div className={`palette-strip ${p.style.fixedTheme ? "locked" : ""}`}>
-        <span className="palette-label">{p.style.fixedTheme ? `Палитра — у «${p.style.name}» своя` : `Палитра · ${p.theme.name}`}</span>
-        <div className="palette-buttons">
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              className={`palette-btn ${t.id === p.theme.id ? "active" : ""}`}
-              disabled={!!p.style.fixedTheme}
-              onClick={() => p.onPalette(t.id)}
-              title={`${t.name} — сбросит свои цвета пунктов`}
-              aria-label={`Палитра ${t.name}`}
-              style={{ background: `conic-gradient(${t.palette[0]} 0 25%, ${t.palette[1]} 0 50%, ${t.palette[2]} 0 75%, ${t.palette[3]} 0 100%)` }}
-            />
-          ))}
-        </div>
-      </div>
-
       <div className="side-body">
         {p.tab === "shape" && !p.process && (
           <>
-            {p.recommended.length > 0 && (
-              <section className="side-section">
-                <div className="side-head">
-                  <span className="star"><Ico name="sparkles" size={14} /></span> Советует модель
-                </div>
-                <div className="shape-grid">{p.recommended.map((l) => thumb(l, `rec-${l}`))}</div>
-              </section>
-            )}
             {visibleCategories().map((c) => {
               const open = c.id === openCat;
               return (
@@ -143,6 +116,25 @@ export function Sidebar(p: Props) {
               </div>
             </section>
           </>
+        )}
+
+        {p.tab === "text" && (
+          <section className={`palette-strip ${p.style.fixedTheme ? "locked" : ""}`}>
+            <div className="side-head">{p.style.fixedTheme ? `Палитра — у стиля «${p.style.name}» своя` : `Палитра · ${p.theme.name}`}</div>
+            <div className="palette-buttons">
+              {THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  className={`palette-btn ${t.id === p.theme.id ? "active" : ""}`}
+                  disabled={!!p.style.fixedTheme}
+                  onClick={() => p.onPalette(t.id)}
+                  title={`${t.name} — сбросит свои цвета пунктов`}
+                  aria-label={`Палитра ${t.name}`}
+                  style={{ background: `conic-gradient(${t.palette[0]} 0 25%, ${t.palette[1]} 0 50%, ${t.palette[2]} 0 75%, ${t.palette[3]} 0 100%)` }}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {p.tab === "text" && (
