@@ -6,6 +6,11 @@ export const PREMIUM_FONT = '"Manrope", "Segoe UI", Arial, sans-serif';
 export const BIZ_FONT = 'Bahnschrift, "Segoe UI", Arial, sans-serif';
 export const COMIC_FONT = '"Balsamiq Sans", "Comic Sans MS", cursive';
 export const COMIC_TITLE = '"Unbounded", "Arial Black", sans-serif';
+export const MONO_FONT = '"JetBrains Mono", Consolas, monospace';
+export const POSTER_FONT = '"Oswald", "Arial Narrow", sans-serif';
+export const POSTER_TITLE = '"Russo One", "Arial Black", sans-serif';
+export const NEWS_FONT = '"PT Serif", Georgia, serif';
+export const NEWS_TITLE = '"Playfair Display", Georgia, serif';
 
 /**
  * Стиль отвечает за форму: шрифт, обводки, заливки, скругления, «от руки».
@@ -28,8 +33,15 @@ export type StyleDef = {
   radius: number;
   stroke: number;
   iconStroke: number;
-  /** Шапка с заголовком; caption — плашка комикса */
-  header: "center" | "underline" | "band" | "hero" | "caption";
+  /** Шапка с заголовком; caption — плашка комикса, dimension — размерная линия чертежа,
+   *  diagonal — косая полоса плаката, masthead — газетная шапка с линейками */
+  header: "center" | "underline" | "band" | "hero" | "caption" | "dimension" | "diagonal" | "masthead";
+  /** Заголовок прописными (чертёж, плакат) */
+  titleUpper?: boolean;
+  /** Особая «кисть» стиля */
+  special?: "blueprint" | "constructivism" | "newspaper";
+  /** Фон-фактура: точки комикса, миллиметровка чертежа, зерно газетной бумаги */
+  paper?: "dots" | "grid" | "grain";
   /** Шрифт заголовка, если он отличается от основного */
   titleFont?: string;
   /** Множитель кегля заголовка (широкие экранные шрифты) */
@@ -44,6 +56,48 @@ export type StyleDef = {
   override?: Partial<Theme>;
   /** Собственная палитра — темы для этого стиля не применяются */
   fixedTheme?: Theme;
+};
+
+const BLUEPRINT: Theme = {
+  id: "blueprint",
+  name: "Синька",
+  bg: "#1D4E8F",
+  card: "#225A9F",
+  title: "#FFFFFF",
+  text: "#EAF2FF",
+  muted: "#AFC8EC",
+  line: "#D6E6FF",
+  onAccent: "#FFFFFF",
+  // разметка на синьке: белый, голубой, жёлтый карандаш, мятный, персик, сирень
+  palette: ["#FFFFFF", "#7FD3FF", "#FFE07A", "#9EF0C9", "#FFB894", "#CDB9FF", "#FF9FBF", "#B6F3FF"],
+};
+
+const POSTER: Theme = {
+  id: "constructivism",
+  name: "Плакат",
+  bg: "#EFE5CF",
+  card: "#F8F1E1",
+  title: "#141414",
+  text: "#1A1A1A",
+  muted: "#5B5147",
+  line: "#141414",
+  onAccent: "#FFFFFF",
+  // красный, чёрный, охра и их оттенки — как у Родченко и Лисицкого
+  palette: ["#D42A1D", "#161616", "#C7892C", "#8E1B13", "#5E5A53", "#E2603D", "#3A3733", "#A88B5A"],
+};
+
+const NEWSPRINT: Theme = {
+  id: "newspaper",
+  name: "Газета",
+  bg: "#F3EFE6",
+  card: "#FAF8F2",
+  title: "#111111",
+  text: "#1C1C1C",
+  muted: "#5A5752",
+  line: "#1C1C1C",
+  onAccent: "#FFFFFF",
+  // только чёрный и серые: пункты различаются тоном
+  palette: ["#1C1C1C", "#5A5A5A", "#8C8C8C", "#333333", "#707070", "#454545", "#A0A0A0", "#262626"],
 };
 
 const CHALK: Theme = {
@@ -205,7 +259,65 @@ export const STYLES: StyleDef[] = [
     iconStroke: 2.4,
     header: "caption",
     comic: true,
+    paper: "dots",
     override: { bg: "#FFF8E6", card: "#FFFFFF", title: "#151515", text: "#1C1C1C", muted: "#4A463E", line: "#151515" },
+  },
+  {
+    id: "blueprint",
+    name: "Чертёж",
+    hint: "Синька, для схем и процессов",
+    font: MONO_FONT,
+    textScale: 0.92,
+    titleWeight: 700,
+    labelWeight: 700,
+    titleUpper: true,
+    accent: "outline",
+    card: "outline",
+    radius: 0.25,
+    stroke: 1.4,
+    iconStroke: 1.6,
+    header: "dimension",
+    special: "blueprint",
+    paper: "grid",
+    fixedTheme: BLUEPRINT,
+  },
+  {
+    id: "constructivism",
+    name: "Конструктивизм",
+    hint: "Плакат 1920-х, красный и чёрный",
+    font: POSTER_FONT,
+    titleFont: POSTER_TITLE,
+    textScale: 1.05,
+    titleWeight: 400,
+    labelWeight: 700,
+    titleUpper: true,
+    accent: "solid",
+    card: "plain",
+    radius: 0,
+    stroke: 2,
+    iconStroke: 2.4,
+    header: "diagonal",
+    special: "constructivism",
+    fixedTheme: POSTER,
+  },
+  {
+    id: "newspaper",
+    name: "Газета",
+    hint: "Ч/б, серифы, линейки",
+    font: NEWS_FONT,
+    titleFont: NEWS_TITLE,
+    textScale: 1,
+    titleWeight: 900,
+    labelWeight: 700,
+    accent: "solid",
+    card: "outline",
+    radius: 0,
+    stroke: 1,
+    iconStroke: 1.8,
+    header: "masthead",
+    special: "newspaper",
+    paper: "grain",
+    fixedTheme: NEWSPRINT,
   },
 ];
 

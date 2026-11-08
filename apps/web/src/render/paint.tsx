@@ -113,6 +113,7 @@ export class Paint {
 
   /** Подгонка заголовка — его шрифтом и с поправкой на ширину экранных шрифтов. */
   fitTitle(text: string, width: number, size: number, maxLines: number, minSize: number): Fitted {
+    if (this.style.titleUpper) text = text.toUpperCase();
     const k = this.look.font ? 1 : (this.style.titleScale ?? 1);
     const f = this.titleFont;
     const scale = this.scale * k;
@@ -301,12 +302,38 @@ export class Paint {
     return { fill: t.card, stroke: ink, sw: 2.4, on: t.text, onMuted: t.muted, icon: shade(c, 0.1) };
   }
 
+  /** «Чертёж», «Конструктивизм», «Газета» — у каждого свой способ закрашивать. */
+  private specialSpec(role: Role, c: string): Spec {
+    const t = this.t;
+    switch (this.style.special) {
+      case "blueprint":
+        // тонкие белые и цветные линии по синьке, заливка — лёгкая лессировка цветом
+        if (role === "accent") return { fill: tint(c, 0.2), stroke: c, sw: 1.8, on: "#FFFFFF", onMuted: t.muted, icon: c };
+        if (role === "chip") return { fill: tint(c, 0.14), stroke: c, sw: 1.2, on: c, onMuted: t.muted, icon: c };
+        if (role === "card") return { fill: tint("#FFFFFF", 0.05), stroke: tint(t.line, 0.75), sw: 1.2, on: t.text, onMuted: t.muted, icon: c };
+        return { fill: "none", stroke: tint(t.line, 0.75), sw: 1.2, on: t.text, onMuted: t.muted, icon: c };
+      case "constructivism":
+        // плоские плашки без обводки, острые углы; карточки — бумага в чёрной рамке
+        if (role === "accent" || role === "chip") {
+          const on = this.textOn(c, "#141414");
+          return { fill: c, stroke: "none", sw: 0, on, onMuted: on, icon: on };
+        }
+        return { fill: t.card, stroke: "#141414", sw: 2, on: t.text, onMuted: t.muted, icon: c };
+      default:
+        // газета: чёрное и серое, тонкие линейки
+        if (role === "accent") return { fill: c, stroke: "none", sw: 0, on: "#FFFFFF", onMuted: "#FFFFFFCC", icon: "#FFFFFF" };
+        if (role === "chip") return { fill: lighten(c, 0.82), stroke: "#1C1C1C", sw: 1, on: "#1C1C1C", onMuted: t.muted, icon: "#1C1C1C" };
+        return { fill: t.card, stroke: "#1C1C1C", sw: 1, on: t.text, onMuted: t.muted, icon: c };
+    }
+  }
+
   private rawSpec(role: Role, c: string): Spec {
     const t = this.t;
     const s = this.style;
     const ink = this.ink;
     if (s.premium) return this.premiumSpec(role, c);
     if (s.comic) return this.comicSpec(role, c);
+    if (s.special) return this.specialSpec(role, c);
     if (s.sketch) {
       // «от руки»: штриховка цветом, контур чернилами (или мелом)
       const line = ink ?? c;
@@ -381,15 +408,37 @@ export class Paint {
     return sp.fill !== "none" && sp.fill !== "transparent";
   }
 
-  path(d: string, sp: Spec, key?: string | number, seedXY: number[] = [d.length]): ReactNode {
-    if (this.sketchy) return this.rough(gen.path(d, this.roughOpts(sp, hash(...seedXY))), key, this.solid(sp) ? <path d={d} fill={this.t.bg} /> : null);
-    return <path key={key} d={d} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
+  /**
+   * Полупрозрачная заливка (#RRGGBBAA) — под ней нужна непрозрачная подложка цвета фона,
+   * иначе сквозь фигуру видны линии и кольца позади. У «Премиума» стекло задумано, у Венна — тоже.
+   */
+  private veil(sp: Spec): boolean {
+    return !this.style.premium && /^#[0-9a-f]{8}$/i.test(sp.fill) && !/ff$/i.test(sp.fill);
+  }
+
+  path(d: string, sp: Spec, key?: string | number, seedXY: number[] = [d.length], seeThrough = false): ReactNode {
+    if (this.sketchy) return this.rough(gen.path(d, this.roughOpts(sp, hash(...seedXY))), key, this.solid(sp) && !seeThrough ? <path d={d} fill={this.t.bg} /> : null);
+    const shape = <path key={key} d={d} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
+    if (seeThrough || !this.veil(sp)) return shape;
+    return (
+      <g key={key}>
+        <path d={d} fill={this.t.bg} />
+        {shape}
+      </g>
+    );
   }
 
   rect(x: number, y: number, w: number, h: number, r: number, sp: Spec, key?: string | number): ReactNode {
     const rr = this.r(r);
     if (this.sketchy) return this.path(roundedRectPath(x, y, w, h, rr), sp, key, [x, y, w, h]);
-    return <rect key={key} x={x} y={y} width={w} height={h} rx={rr} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
+    const shape = <rect key={key} x={x} y={y} width={w} height={h} rx={rr} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
+    if (!this.veil(sp)) return shape;
+    return (
+      <g key={key}>
+        <rect x={x} y={y} width={w} height={h} rx={rr} fill={this.t.bg} />
+        {shape}
+      </g>
+    );
   }
 
   topRect(x: number, y: number, w: number, h: number, r: number, sp: Spec, key?: string | number): ReactNode {
@@ -400,17 +449,28 @@ export class Paint {
   circle(cx: number, cy: number, r: number, sp: Spec, key?: string | number, seeThrough = false): ReactNode {
     if (this.sketchy)
       return this.rough(gen.circle(cx, cy, r * 2, this.roughOpts(sp, hash(cx, cy, r))), key, this.solid(sp) && !seeThrough ? <circle cx={cx} cy={cy} r={r} fill={this.t.bg} /> : null);
-    return <circle key={key} cx={cx} cy={cy} r={r} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
+    const shape = <circle key={key} cx={cx} cy={cy} r={r} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeDasharray={sp.dash} filter={sp.filter} />;
+    if (seeThrough || !this.veil(sp)) return shape;
+    return (
+      <g key={key}>
+        <circle cx={cx} cy={cy} r={r} fill={this.t.bg} />
+        {shape}
+      </g>
+    );
   }
 
-  poly(pts: [number, number][], sp: Spec, key?: string | number): ReactNode {
+  poly(pts: [number, number][], sp: Spec, key?: string | number, seeThrough = false): ReactNode {
+    const points = pts.map((q) => q.join(",")).join(" ");
     if (this.sketchy)
-      return this.rough(
-        gen.polygon(pts, this.roughOpts(sp, hash(...pts.flat()))),
-        key,
-        this.solid(sp) ? <polygon points={pts.map((q) => q.join(",")).join(" ")} fill={this.t.bg} /> : null,
-      );
-    return <polygon key={key} points={pts.map((p) => p.join(",")).join(" ")} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeLinejoin="round" filter={sp.filter} />;
+      return this.rough(gen.polygon(pts, this.roughOpts(sp, hash(...pts.flat()))), key, this.solid(sp) && !seeThrough ? <polygon points={points} fill={this.t.bg} /> : null);
+    const shape = <polygon key={key} points={points} fill={sp.fill} stroke={sp.stroke} strokeWidth={sp.sw} strokeLinejoin="round" filter={sp.filter} />;
+    if (seeThrough || !this.veil(sp)) return shape;
+    return (
+      <g key={key}>
+        <polygon points={points} fill={this.t.bg} />
+        {shape}
+      </g>
+    );
   }
 
   line(x1: number, y1: number, x2: number, y2: number, color: string, width = 2, dash?: string, key?: string | number): ReactNode {

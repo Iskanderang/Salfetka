@@ -15,9 +15,16 @@ import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/700.css";
 import "@fontsource/balsamiq-sans/400.css";
 import "@fontsource/balsamiq-sans/700.css";
-// заголовочный шрифт стиля «Комикс»
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/700.css";
+import "@fontsource/oswald/400.css";
+import "@fontsource/oswald/700.css";
+// заголовочные шрифты стилей «Комикс», «Конструктивизм», «Газета»
 import "@fontsource/unbounded/700.css";
 import "@fontsource/unbounded/900.css";
+import "@fontsource/russo-one/400.css";
+import "@fontsource/playfair-display/700.css";
+import "@fontsource/playfair-display/900.css";
 
 export type FontDef = {
   id: string;
@@ -39,15 +46,21 @@ export const FONTS: FontDef[] = [
   { id: "pt-serif", name: "PT Serif", family: "PT Serif", stack: '"PT Serif", Georgia, serif', scale: 1 },
   { id: "caveat", name: "Caveat (от руки)", family: "Caveat", stack: '"Caveat", "Segoe Print", cursive', scale: 1.3 },
   { id: "balsamiq-sans", name: "Balsamiq (комикс)", family: "Balsamiq Sans", stack: '"Balsamiq Sans", "Comic Sans MS", cursive', scale: 1 },
+  { id: "jetbrains-mono", name: "JetBrains Mono (чертёж)", family: "JetBrains Mono", stack: '"JetBrains Mono", Consolas, monospace', scale: 0.92 },
+  { id: "oswald", name: "Oswald (плакат)", family: "Oswald", stack: '"Oswald", "Arial Narrow", sans-serif', scale: 1.05 },
 ];
 
 /** Шрифты заголовков стилей: в списке выбора их нет, но в экспорт они встраиваются. */
-export const TITLE_FONTS: FontDef[] = [{ id: "unbounded", name: "Unbounded", family: "Unbounded", stack: '"Unbounded", "Arial Black", sans-serif', scale: 0.9 }];
+export const TITLE_FONTS: FontDef[] = [
+  { id: "unbounded", name: "Unbounded", family: "Unbounded", stack: '"Unbounded", "Arial Black", sans-serif', scale: 0.9 },
+  { id: "russo-one", name: "Russo One", family: "Russo One", stack: '"Russo One", "Arial Black", sans-serif', scale: 1 },
+  { id: "playfair-display", name: "Playfair Display", family: "Playfair Display", stack: '"Playfair Display", Georgia, serif', scale: 1 },
+];
 
 export const fontById = (id: string | undefined) => FONTS.find((f) => f.id === id);
 
 /** Шрифты, которые стили используют сами (не через выбор пользователя), — грузим до первого рендера. */
-export const styleFonts = () => [fontById("caveat"), fontById("balsamiq-sans"), ...TITLE_FONTS];
+export const styleFonts = () => [fontById("caveat"), fontById("balsamiq-sans"), fontById("jetbrains-mono"), fontById("oswald"), fontById("pt-serif"), ...TITLE_FONTS];
 
 /** Ждём файлы шрифта, чтобы замерять ширину текста уже по нему. */
 export async function loadFont(f: FontDef | undefined) {

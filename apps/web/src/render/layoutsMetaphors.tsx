@@ -109,7 +109,7 @@ const iceberg: Renderer = (v, p, top) => {
           <>
             <rect x={0} y={waterY} width={W} height={total - waterY} fill={tint(wc, 0.13)} />
             {p.curve(wave, tint(wc, 0.8), 2.5, "wave")}
-            {p.poly(under, { ...underSpec, fill: p.sketchy ? underSpec.fill : tint(ice, 0.22) })}
+            {p.poly(under, { ...underSpec, fill: p.sketchy ? underSpec.fill : tint(ice, 0.22) }, undefined, true)}
             {p.poly(tip, tipSpec)}
           </>
         )}
@@ -381,9 +381,10 @@ const scales: Renderer = (v, p, top) => {
         { title: v.items[0]?.label ?? "", icon: v.items[0]?.icon ?? "scale", rows: v.items.slice(0, half).map((it) => it.label), item: undefined },
         { title: v.items[half]?.label ?? "", icon: v.items[half]?.icon ?? "scale", rows: v.items.slice(half).map((it) => it.label), item: undefined },
       ];
-  // тяжелее та сторона, где больше доводов
+  // весы всегда наклонены: тяжелее та сторона, где больше доводов; поровну — перевешивает вторая чаша
   const diff = sides[1].rows.length - sides[0].rows.length;
-  const a = (Math.max(-12, Math.min(12, diff * 5)) * Math.PI) / 180;
+  const tilt = diff === 0 ? 8 : Math.sign(diff) * Math.max(8, Math.min(12, Math.abs(diff) * 5));
+  const a = (tilt * Math.PI) / 180;
   const cx = W / 2;
   const beamY = top + 70;
   const L = 280;

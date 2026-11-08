@@ -154,11 +154,21 @@ const cycle: Renderer = (v, p, top) => {
     );
   });
 
+  // кольцо — дуги между кружками: линия обрывается до кружка и не просвечивает сквозь него
+  const ringW = p.sketchy ? 2 : 10;
+  const gapA = 2 * Math.asin(Math.min(1, (nodeR + 10 + ringW / 2) / (2 * R)));
+  const arcs = v.items.map((_, i) => {
+    const a1 = angle(i) + gapA;
+    const a2 = angle(i + 1) - gapA;
+    const d = `M${cx + R * Math.cos(a1)},${cy + R * Math.sin(a1)} A${R},${R} 0 0 1 ${cx + R * Math.cos(a2)},${cy + R * Math.sin(a2)}`;
+    return p.sketchy ? p.curve(d, p.lineColor, ringW, `ring${i}`) : <path key={`ring${i}`} d={d} fill="none" stroke={p.t.line} strokeWidth={ringW} strokeLinecap="butt" />;
+  });
+
   return {
     height: cy + R + nodeR + 30 + (bottom ? bottom.h + 14 : 0),
     body: (
       <g>
-        {p.circle(cx, cy, R, { ...NOLINE, fill: "none", stroke: p.sketchy ? p.lineColor : p.t.line, sw: p.sketchy ? 2 : 10 })}
+        {arcs}
         {!p.sketchy && <circle cx={cx} cy={cy} r={R - 70} fill={tint(c0, 0.06)} />}
         {p.icon("refresh-cw", cx, cy, 64, tint(c0, 0.35))}
         {arrows}

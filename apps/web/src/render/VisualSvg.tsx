@@ -8,7 +8,7 @@ import { Text } from "./primitives";
 import { textHeight } from "./text";
 import { lighten, type Theme } from "./themes";
 import type { StyleDef } from "./styles";
-import { comicPaper, styledHeader } from "./stylePasses";
+import { blueprintFrame, paperPattern, styledHeader } from "./stylePasses";
 
 type Props = {
   visual: Visual;
@@ -32,7 +32,8 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
     const th = textHeight(titleFit);
     let top = 44;
     let head = null;
-    const styled = header === "none" ? null : styledHeader(p, visual.title, W);
+    const kicker = CATEGORIES.find((c) => c.layouts.includes(layout))?.name ?? LAYOUT_LABELS[layout];
+    const styled = header === "none" ? null : styledHeader(p, visual.title, W, undefined, kicker);
     if (styled) {
       head = styled.head;
       top = styled.bottom;
@@ -72,10 +73,16 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
       top = bandH + 40;
     }
     const r = RENDERERS[layout](visual, p, top);
-    const height = r.height + (p.premium || p.comic ? 20 : 0);
+    const height = r.height + (p.premium || style.paper ? 20 : 0);
     // фон премиум-стиля: мягкое свечение цветов палитры (свой фон пользователя — без украшений)
     let backdrop = null;
-    if (p.comic && !look.bg) backdrop = <rect data-bg="1" width={W} height={height} fill={`url(#${uid}-paper)`} />;
+    if (style.paper && !look.bg)
+      backdrop = (
+        <>
+          <rect data-bg="1" width={W} height={height} fill={`url(#${uid}-paper)`} />
+          {style.special === "blueprint" && blueprintFrame(W, height)}
+        </>
+      );
     if (p.premium && !look.bg) {
       backdrop =
         p.premium === "dark" ? (
@@ -97,7 +104,7 @@ export const VisualSvg = forwardRef<SVGSVGElement, Props>(({ visual, layout, the
       defs: (
         <>
           {p.defsNodes()}
-          {p.comic && comicPaper(uid)}
+          {style.paper && paperPattern(style.paper, uid)}
           {p.premium && (
             <>
               <radialGradient id={`${uid}-glow0`}>

@@ -6,7 +6,7 @@ import { textHeight } from "../render/text";
 import { lighten, tint, type Theme } from "../render/themes";
 import type { StyleDef } from "../render/styles";
 import { layoutProcess, type Dir, type PlacedEdge, type PlacedNode } from "./layout";
-import { comicPaper, styledHeader } from "../render/stylePasses";
+import { paperPattern, styledHeader } from "../render/stylePasses";
 
 const PAD = 40;
 const TASK_W = 168;
@@ -94,7 +94,7 @@ export function buildProcess(process: ProcessGraph, style: StyleDef, theme: Them
     height,
     paint: p,
     bgFill,
-    paper: p.comic && !look.bg,
+    paper: style.paper && !look.bg ? style.paper : undefined,
     body,
   };
 }
@@ -209,7 +209,7 @@ export const ProcessSvg = forwardRef<SVGSVGElement, Props>(
             <feDisplacementMap in="SourceGraphic" scale="2.2" />
           </filter>
           {r.paint.defsNodes()}
-          {r.paper && comicPaper(uid)}
+          {r.paper && paperPattern(r.paper, uid)}
         </defs>
         {!transparent && (
           <rect
