@@ -93,24 +93,23 @@ export function Sidebar(p: Props) {
           <>
             <section className="side-section">
               <div className="side-head">Стиль</div>
-              <div className="shape-grid">
+              {/* ваша схема целиком в каждом стиле; описание стиля — в подсказке */}
+              <div className="style-grid">
                 {STYLES.map((s) => (
                   <button
                     key={s.id}
-                    className={`shape-card ${s.id === p.style.id ? "active" : ""}`}
+                    className={`shape-card style-card ${s.id === p.style.id ? "active" : ""}`}
                     onClick={() => p.onStyle(s.id)}
-                    title={s.hint}
+                    title={`${s.name} — ${s.hint}`}
                   >
-                    <div className="shape-thumb">
+                    <div className="style-thumb">
                       {p.process ? (
-                        <ProcessSvg process={p.process} dir={p.processDir} theme={p.theme} style={s} look={p.look} className="svg-thumb" />
+                        <ProcessSvg process={p.process} dir={p.processDir} theme={p.theme} style={s} look={p.look} className="svg-fit" />
                       ) : (
-                        <VisualSvg visual={p.visual} layout={p.layout} theme={p.theme} style={s} look={p.look} className="svg-thumb" />
+                        <VisualSvg visual={p.visual} layout={p.layout} theme={p.theme} style={s} look={p.look} className="svg-fit" />
                       )}
                     </div>
-                    <span>
-                      {s.name} <small className="muted">· {s.hint}</small>
-                    </span>
+                    <span>{s.name}</span>
                   </button>
                 ))}
               </div>
