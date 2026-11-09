@@ -12,3 +12,8 @@ frames/
 frames-v/
 
 .first-run-done
+
+# собранный установщик (выкладывается в Releases, не в репозиторий)
+installer/Output/
+unins000.exe
+unins000.dat
