@@ -517,7 +517,7 @@ export function App() {
             <div className="error">
               <Ico name="circle-alert" size={18} />
               <span>
-              Нейросеть не отвечает: {status.error}{" "}
+              {status.error}{" "}
               {status.provider === "local" ? (
                 <>
                   <button className="link" onClick={() => setHelp("install")}>

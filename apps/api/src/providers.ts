@@ -104,6 +104,6 @@ export function friendlyError(e: unknown, ctx: AiCtx): string {
   if (err.status === 429) return `${name}: исчерпан лимит бесплатного тарифа. Подождите минуту или выберите другой сервис.`;
   if (err.status === 404) return `${name}: модель «${ctx.model}» недоступна. Нажмите «Проверить ключ» и выберите из списка.`;
   if (err.code === "ECONNREFUSED" || /ECONNREFUSED|fetch failed|Connection error/i.test(err.message ?? ""))
-    return ctx.def.cloud ? `${name} не отвечает — проверьте интернет.` : "LM Studio не отвечает — запустите сервер (вкладка Developer → Start Server).";
+    return ctx.def.cloud ? `${name} не отвечает — проверьте интернет.` : "LM Studio не отвечает — запустите сервер или API.";
   return `${name}: ${err.message ?? String(e)}`;
 }

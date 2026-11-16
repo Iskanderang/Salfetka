@@ -556,7 +556,7 @@ declare global {
 }
 
 /** Время ролика: задаётся снаружи (__setTime) при записи, ?play — проигрывание, ?t= — стоп-кадр */
-export function useTimeline() {
+export function useTimeline(duration = DURATION) {
   const params = new URLSearchParams(location.search);
   const [t, setT] = useState(Number(params.get("t") ?? 0));
   useEffect(() => {
@@ -566,7 +566,7 @@ export function useTimeline() {
     const t0 = performance.now();
     let id = 0;
     const loop = () => {
-      setT(((performance.now() - t0) / 1000) % DURATION);
+      setT(((performance.now() - t0) / 1000) % duration);
       id = requestAnimationFrame(loop);
     };
     id = requestAnimationFrame(loop);

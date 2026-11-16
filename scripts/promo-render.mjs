@@ -1,19 +1,21 @@
 // Рекламный ролик: покадровая запись страницы /promo.html (сервис должен работать).
 // FORMAT=v node scripts/promo-render.mjs — вертикальная версия 1080×1920 (кадры в frames-v).
+// FORMAT=steps — ролик «как это работает» по шагам, 1920×1080, 60 с (кадры в frames-s).
 // Склейка: ffmpeg -framerate 30 -i frames/%05d.jpg -c:v libx264 -crf 18 -pix_fmt yuv420p salfetka-promo.mp4
 import { createRequire } from "node:module";
 import { mkdir, rm } from "node:fs/promises";
 const require = createRequire(import.meta.url);
 const puppeteer = require("puppeteer-core");
-const FPS = 30, DURATION = 39.5;
 const V = process.env.FORMAT === "v";
-const DIR = V ? "frames-v" : "frames";
+const S = process.env.FORMAT === "steps";
+const FPS = 30, DURATION = S ? 60 : 39.5;
+const DIR = V ? "frames-v" : S ? "frames-s" : "frames";
 await rm(DIR, { recursive: true, force: true });
 await mkdir(DIR);
 const b = await puppeteer.launch({ executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", headless: true });
 const pg = await b.newPage();
 await pg.setViewport(V ? { width: 1080, height: 1920 } : { width: 1920, height: 1080 });
-await pg.goto("http://localhost:5173/promo.html" + (V ? "?format=v" : ""), { waitUntil: "networkidle0" });
+await pg.goto("http://localhost:5173/promo.html" + (V ? "?format=v" : S ? "?format=steps" : ""), { waitUntil: "networkidle0" });
 await pg.waitForFunction(() => window.__ready === true, { timeout: 20000 });
 const total = FPS * DURATION;
 const t0 = Date.now();

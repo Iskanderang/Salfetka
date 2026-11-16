@@ -22,5 +22,18 @@ if (process.argv.includes("--refresh-branding") || !["wizard.bmp", "wizard-small
   execFileSync("python", ["scripts/installer-assets.py"], { stdio: "inherit" });
 }
 execFileSync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/build-setup-host.ps1"], { stdio: "inherit" });
+// Package only version-controlled application files, never arbitrary workspace contents.
+const tracked = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
+const roots = new Set(["package.json", "package-lock.json", "README.md", "LICENSE", "start.bat", "Первый запуск.bat"]);
+const runtimeInstaller = new Set(["installer/setup-wizard.ps1", "installer/setup-worker.ps1", "installer/salfetka.ico"]);
+const files = tracked.filter((name) => roots.has(name) || runtimeInstaller.has(name) ||
+  ((name.startsWith("apps/") || name.startsWith("packages/")) && !/(^|\/)(?:node_modules|dist|\.cache|\.setup|\.git)(\/|$)/.test(name) && !/(^|\/)\.env(?:\..*)?$/.test(name)) ||
+  name === "apps/api/.env.example" || name === "scripts/update.bat");
+files.push("installer/Salfetka.Setup.exe");
+const manifest = files.map((name) => {
+  if (/["\r\n]/.test(name)) throw new Error("Unsupported package path");
+  return `Source: "..\\${name.replaceAll("/", "\\")}"; DestDir: "{app}\\${path.posix.dirname(name) === "." ? "" : path.posix.dirname(name).replaceAll("/", "\\")}"; Flags: ignoreversion`;
+}).join("\r\n");
+fs.writeFileSync("installer/package-files.iss", "\ufeff; Generated from the Git file list. Do not edit.\r\n" + manifest + "\r\n");
 execFileSync(iscc, [`/DAppVer=${version}`, "installer/salfetka-local.iss"], { stdio: "inherit" });
 console.log(`Готово: installer/Output/Salfetka-Setup-${version}.exe (программа внутри; для настройки нужен интернет)`);

@@ -10,6 +10,7 @@ docs/
 .claude/
 frames/
 frames-v/
+frames-s/
 
 .first-run-done
 .setup/
@@ -17,5 +18,8 @@ frames-v/
 # собранный установщик (выкладывается в Releases, не в репозиторий)
 installer/Output/
 installer/Salfetka.Setup.exe
+installer/package-files.iss
+1.png
+2.png
 unins000.exe
 unins000.dat
