@@ -12,8 +12,10 @@ frames/
 frames-v/
 
 .first-run-done
+.setup/
 
 # собранный установщик (выкладывается в Releases, не в репозиторий)
 installer/Output/
+installer/Salfetka.Setup.exe
 unins000.exe
 unins000.dat

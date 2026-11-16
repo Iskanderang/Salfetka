@@ -31,6 +31,8 @@ set /p SETUP_MODE=<".first-run-done"
 rem ─── Настройки ──────────────────────────────────────────────
 rem Модель из LM Studio. Поменяли модель - поменяйте и в apps\api\.env
 set "MODEL=google/gemma-4-12b-qat"
+rem Графический мастер сохраняет выбранную модель в .env.
+if exist "apps\api\.env" for /f "tokens=1,* delims==" %%a in ('findstr /b "LLM_MODEL=" "apps\api\.env"') do set "MODEL=%%b"
 rem Модель для подбора иконок по смыслу (84 МБ)
 set "EMBED=text-embedding-nomic-embed-text-v1.5"
 set "WEB_PORT=5173"

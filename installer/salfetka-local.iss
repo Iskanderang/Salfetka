@@ -1,0 +1,122 @@
+; Офлайн-установщик Салфетки: упаковывает сам проект целиком (без GitHub и интернета).
+; Внутрь идут актуальные локальные файлы: apps/, packages/, scripts/, start.bat, «Первый запуск.bat».
+; После копирования открывается графический мастер: компоненты программы, выбор режима,
+; самостоятельная настройка LM Studio или автоматическая — только с явным согласием.
+; Сборка: node scripts/build-installer.mjs (нужен Inno Setup 6) → installer/Output/Salfetka-Setup-<версия>.exe
+
+#ifndef AppVer
+  #define AppVer "1.0.0"
+#endif
+
+[Setup]
+; тот же AppId, что у web-установщика: одна «Салфетка» в списке приложений, корректная замена и удаление
+AppId={{4E0862C5-1DC0-442A-93D8-907AC18AD8CE}
+AppName=Салфетка
+AppVersion={#AppVer}
+AppVerName=Салфетка {#AppVer}
+AppPublisher=Салфетка
+AppPublisherURL=https://t.me/ii_eggs
+AppSupportURL=https://github.com/Iskanderang/Salfetka
+AppUpdatesURL=https://github.com/Iskanderang/Salfetka
+; без прав администратора: всё ставится в папку пользователя
+PrivilegesRequired=lowest
+DefaultDirName={%USERPROFILE}\Salfetka
+; если выбрать другую папку, внутри неё всё равно будет «Salfetka» — удаление не заденет чужие файлы
+AppendDefaultDirName=yes
+DisableProgramGroupPage=yes
+LicenseFile=..\LICENSE
+OutputDir=Output
+OutputBaseFilename=Salfetka-Setup-{#AppVer}
+SetupIconFile=salfetka.ico
+UninstallDisplayIcon={app}\installer\salfetka.ico
+UninstallDisplayName=Салфетка
+WizardStyle=modern
+WizardSizePercent=120
+WizardImageFile=assets\wizard.bmp
+WizardSmallImageFile=assets\wizard-small.bmp
+WizardImageStretch=yes
+DisableWelcomePage=no
+Compression=lzma2
+SolidCompression=yes
+
+[Languages]
+Name: "ru"; MessagesFile: "compiler:Languages\Russian.isl"
+
+[CustomMessages]
+ru.DesktopIcon=Ярлык «Салфетка» на рабочем столе
+ru.RunWizard=Открыть мастер настройки Салфетки
+
+[Messages]
+ru.WelcomeLabel1=Ваши идеи — в понятных схемах
+ru.WelcomeLabel2=Салфетка превращает короткий текст в схемы для презентаций, документов и публикаций.%n%nВы сможете менять текст, значки и оформление, а затем скачать готовую картинку.%n%nСначала установим программу. Затем мастер поможет выбрать способ работы нейросети. Для подготовки компонентов потребуется интернет.
+ru.FinishedHeadingLabel=Салфетка установлена
+ru.FinishedLabel=Теперь откройте мастер настройки. Он подготовит необходимые компоненты и поможет подключить нейросеть.%n%nLM Studio и модели устанавливаются только после вашего согласия. Вы также можете подготовить их самостоятельно или работать через интернет.
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:DesktopIcon}"
+
+[Files]
+; Весь проект из папки уровнем выше. НЕ упаковываем:
+;  .git, .claude — служебное; node_modules, .cache — ставятся/строятся на месте;
+;  docs, frames*, *.mp4, 1.png, 2.png — промо-материалы и видео (сотни МБ);
+;  .first-run-done — метка «мастер пройден», у нового пользователя её быть не должно;
+;  apps\api\.env — ваша локальная настройка и ключи, чужим людям не нужна (есть .env.example);
+;  installer\Output — чтобы установщик не паковал сам себя.
+Source: "..\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; \
+  Excludes: ".git\*,.claude\*,.setup\*,node_modules\*,apps\api\.cache\*,apps\web\dist\*,docs\*,frames\*,frames-v\*,frames-s\*,installer\Output\*,installer\install.ps1,installer\salfetka.iss,*.mp4,.first-run-done,apps\api\.env,1.png,2.png"
+
+[Icons]
+Name: "{autoprograms}\Салфетка"; Filename: "{app}\installer\Salfetka.Setup.exe"; Parameters: "/launch"; WorkingDir: "{app}"; IconFilename: "{app}\installer\salfetka.ico"
+Name: "{autoprograms}\Настроить Салфетку"; Filename: "{app}\installer\Salfetka.Setup.exe"; WorkingDir: "{app}"; IconFilename: "{app}\installer\salfetka.ico"
+Name: "{autoprograms}\Удалить Салфетку"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\Салфетка"; Filename: "{app}\installer\Salfetka.Setup.exe"; Parameters: "/launch"; WorkingDir: "{app}"; IconFilename: "{app}\installer\salfetka.ico"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\installer\Salfetka.Setup.exe"; WorkingDir: "{app}"; Description: "{cm:RunWizard}"; Flags: postinstall nowait skipifsilent
+
+[UninstallDelete]
+; установленная Салфетка, библиотеки и настройки — вся папка
+Type: filesandordirs; Name: "{app}"
+
+[Code]
+var
+  BenefitTitle, BenefitText: TNewStaticText;
+
+procedure InitializeWizard;
+begin
+  WizardForm.Font.Name := 'Segoe UI';
+  WizardForm.Color := clWhite;
+  WizardForm.MainPanel.Color := clWhite;
+  BenefitTitle := TNewStaticText.Create(WizardForm);
+  BenefitTitle.Parent := WizardForm.InstallingPage;
+  BenefitTitle.Left := ScaleX(0);
+  BenefitTitle.Top := WizardForm.ProgressGauge.Top + WizardForm.ProgressGauge.Height + ScaleY(28);
+  BenefitTitle.Width := WizardForm.InstallingPage.Width;
+  BenefitTitle.Height := ScaleY(28);
+  BenefitTitle.Font.Size := 15;
+  BenefitTitle.Font.Style := [fsBold];
+  BenefitTitle.Font.Color := $00E88D25;
+  BenefitText := TNewStaticText.Create(WizardForm);
+  BenefitText.Parent := WizardForm.InstallingPage;
+  BenefitText.Left := BenefitTitle.Left;
+  BenefitText.Top := BenefitTitle.Top + ScaleY(38);
+  BenefitText.Width := WizardForm.InstallingPage.Width - ScaleX(12);
+  BenefitText.Height := ScaleY(100);
+  BenefitText.AutoSize := False;
+  BenefitText.WordWrap := True;
+end;
+
+procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
+begin
+  if MaxProgress <= 0 then Exit;
+  if CurProgress < MaxProgress div 3 then begin
+    BenefitTitle.Caption := 'Из текста — в понятную схему';
+    BenefitText.Caption := 'Вставьте абзац или список на 3–8 пунктов. Салфетка предложит форму, а вы сможете поправить результат.';
+  end else if CurProgress < (MaxProgress div 3) * 2 then begin
+    BenefitTitle.Caption := 'Оформите по своему вкусу';
+    BenefitText.Caption := 'Выберите стиль, цвета и шрифт. Нажмите на пункт схемы, чтобы изменить его текст или значок.';
+  end else begin
+    BenefitTitle.Caption := 'Сохраните и используйте';
+    BenefitText.Caption := 'Скачайте PNG для документа или презентации. PNG без фона удобно размещать поверх слайда, а SVG подойдёт для дальнейшей работы.';
+  end;
+end;
